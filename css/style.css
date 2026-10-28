@@ -1,3 +1,26 @@
+/* TH Sarabun New ships with the site (fonts/) so the report looks the same on every computer;
+   deliberately no local() lookup of an installed copy. */
+@font-face {
+  font-family: "TH Sarabun New";
+  src: url("../fonts/THSarabunNew-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: "TH Sarabun New";
+  src: url("../fonts/THSarabunNew-Bold.woff2") format("woff2");
+  font-weight: 700; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: "TH Sarabun New";
+  src: url("../fonts/THSarabunNew-Italic.woff2") format("woff2");
+  font-weight: 400; font-style: italic; font-display: block;
+}
+@font-face {
+  font-family: "TH Sarabun New";
+  src: url("../fonts/THSarabunNew-BoldItalic.woff2") format("woff2");
+  font-weight: 700; font-style: italic; font-display: block;
+}
+
 :root {
   --ui-bg: #f3f1f7;
   --ui-panel: #ffffff;
@@ -7,7 +30,7 @@
   --accent: #5b2a86;
   --accent-soft: #efe7f7;
   --gold: #f2b20f;
-  --doc-font: "TH Sarabun New", "Sarabun", sans-serif;
+  --doc-font: "TH Sarabun New", sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -156,38 +179,38 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
   color: #000;
   box-shadow: 0 2px 10px rgba(0,0,0,.18);
   font-family: var(--doc-font);
-  font-size: 12pt;
-  line-height: 1.5;
+  font-size: 16pt;
+  line-height: 1.3; /* = Word "single" spacing for TH Sarabun New, as in the template */
   position: relative;
 }
-.sheet p { margin: 0 0 4pt; }
+.sheet p { margin: 0; }
 .sheet .indent { text-indent: 2.5em; }
 .sheet .center { text-align: center; }
 .sheet .right { text-align: right; }
 .sheet .justify { text-align: justify; }
-.sheet h1, .sheet h2, .sheet h3 { margin: 0 0 6pt; line-height: 1.55; }
-.sheet h1 { font-size: 22pt; }
-.sheet h2 { font-size: 16pt; }
-.sheet h3 { font-size: 13pt; }
+.sheet h1, .sheet h2, .sheet h3 { margin: 0 0 6pt; line-height: 1.3; }
+.sheet h1 { font-size: 24pt; }
+.sheet h2 { font-size: 18pt; }
+.sheet h3 { font-size: 18pt; }
 .sheet .b { font-weight: 700; }
 .sheet .muted { color: #333; }
-.sheet .small { font-size: 10.5pt; }
+.sheet .small { font-size: 14pt; }
 .sheet .pre { white-space: pre-wrap; }
 .sheet .section { margin-top: 4pt; }
 .sheet .keep { break-inside: avoid; }
 .sheet .sub { padding-left: 1.5em; }
 .sheet .rule { border-top: 1px dotted #000; margin: 4pt 0 8pt; }
 .sheet .dots { border-bottom: 1px dotted #000; display: inline-block; min-width: 4em; padding: 0 .4em; text-align: center; }
-.sheet .writein { border-bottom: 1px dotted #000; min-height: 1.6em; margin-bottom: 2pt; }
+.sheet .writein { border-bottom: 1px dotted #000; min-height: 1.4em; margin-bottom: 2pt; }
 
 /* Checkbox glyph */
 .cb {
-  display: inline-block; width: .85em; height: .85em; border: 1.2px solid #000;
-  vertical-align: -0.08em; margin-right: .3em; position: relative;
+  display: inline-block; width: .52em; height: .52em; border: 1.2px solid #000;
+  vertical-align: 0; margin-right: .3em; position: relative;
 }
 .cb.on::after {
-  content: ""; position: absolute; left: .22em; top: -.08em;
-  width: .28em; height: .6em; border: solid #000; border-width: 0 .14em .14em 0;
+  content: ""; position: absolute; left: .14em; top: -.13em;
+  width: .17em; height: .42em; border: solid #000; border-width: 0 .09em .09em 0;
   transform: rotate(40deg);
 }
 .opt { display: inline-block; margin-right: 1.6em; white-space: nowrap; }
@@ -202,45 +225,46 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 /* the background is an <img> (not a CSS background) so it prints even when "Background graphics" is off */
 .cover-main .cover-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; z-index: 0; }
 .cover-main > div { position: relative; z-index: 1; }
-.cover-main .c-title { margin-top: 70mm; font-size: 30pt; font-weight: 700; color: #3d1b63; }
-.cover-main .c-project { margin-top: 10mm; font-size: 22pt; font-weight: 700; padding: 0 30mm; line-height: 1.35; }
-.cover-main .c-year { font-size: 20pt; font-weight: 700; margin-top: 4mm; }
-.cover-main .c-owner-label { margin-top: 30mm; font-size: 17pt; font-weight: 700; }
-.cover-main .c-owner { font-size: 17pt; }
-.cover-main .c-school { margin-top: auto; margin-bottom: 80mm; font-size: 18pt; font-weight: 700; line-height: 1.5; }
+.cover-main .c-title { margin-top: 70mm; font-size: 33pt; font-weight: 700; color: #3d1b63; }
+.cover-main .c-project { margin-top: 8mm; font-size: 28pt; font-weight: 700; padding: 0 30mm; line-height: 1.2; }
+.cover-main .c-year { font-size: 28pt; font-weight: 700; margin-top: 3mm; }
+.cover-main .c-owner-label { margin-top: 24mm; font-size: 24pt; font-weight: 700; }
+.cover-main .c-owner { font-size: 24pt; font-weight: 700; }
+.cover-main .c-school { margin-top: auto; margin-bottom: 80mm; font-size: 24pt; font-weight: 700; line-height: 1.3; }
 
 .cover-sub { justify-content: flex-start; padding: 30mm 25mm; }
-.cover-sub .c-title { font-size: 24pt; font-weight: 700; line-height: 1.4; }
-.cover-sub .c-sub { font-size: 20pt; font-weight: 700; line-height: 1.4; }
+.cover-sub .c-title { font-size: 24pt; font-weight: 700; line-height: 1.3; }
+.cover-sub .c-sub { font-size: 22pt; font-weight: 700; line-height: 1.3; }
 .cover-sub img.logo { width: 50mm; margin: 16mm 0; }
-.cover-sub .c-owner { font-size: 18pt; font-weight: 700; line-height: 1.5; }
-.cover-sub .c-org { margin-top: auto; font-size: 17pt; font-weight: 700; line-height: 1.5; }
+.cover-sub .c-owner { font-size: 22pt; line-height: 1.3; }
+.cover-sub .c-org { margin-top: auto; font-size: 22pt; font-weight: 700; line-height: 1.3; }
 
 /* Memo */
 .memo-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; margin-bottom: 6pt; }
 .memo-head img { width: 1.5cm; }
-.memo-head .t { font-size: 26pt; font-weight: 700; text-align: center; }
+.memo-head .t { font-size: 29pt; font-weight: 700; text-align: center; line-height: 1.2; }
 .memo-line { display: flex; gap: .6em; align-items: baseline; }
-.memo-line .k { font-weight: 700; font-size: 14pt; white-space: nowrap; }
+.memo-line .k { font-weight: 700; font-size: 20pt; white-space: nowrap; }
 .memo-line .v { flex: 1; border-bottom: 1px dotted #000; }
 
 /* Signatures */
-.sign { margin-top: 18pt; display: grid; gap: 16pt; }
+.sign { margin-top: 12pt; display: grid; gap: 12pt; }
 .sign.two { grid-template-columns: 1fr 1fr; }
-.sign .s { text-align: center; line-height: 1.7; }
+.sign .s { text-align: center; line-height: 1.3; }
 .sign.end { justify-items: end; }
 .sign.end .s { min-width: 60%; }
 
 /* Tables */
 table.t {
-  border-collapse: collapse; width: 100%; margin: 6pt 0;
+  border-collapse: collapse; width: 100%; margin: 6pt 0; line-height: 1.2;
   page-break-inside: auto;
 }
-table.t th, table.t td { border: 1px solid #000; padding: 2pt 5pt; vertical-align: top; }
+table.t th, table.t td { border: 1px solid #000; padding: 1pt 5pt; vertical-align: top; }
 table.t th { font-weight: 700; text-align: center; vertical-align: middle; background: #f2f2f2; }
 table.t td.c { text-align: center; }
 table.t tfoot td { font-weight: 700; }
 table.t tr { page-break-inside: avoid; }
+table.t .lvl { font-size: 14pt; line-height: 1.1; }
 table.t .lvl small { display: block; font-weight: 400; }
 
 /* Appendix photos */
@@ -254,7 +278,7 @@ table.t .lvl small { display: block; font-weight: 400; }
 .photos.pp2 img { max-height: 108mm; }
 .photos.pp4 img { max-height: 105mm; }
 .photos.pp6 img { max-height: 68mm; }
-.photos figcaption { font-size: 11pt; margin-top: 2pt; }
+.photos figcaption { font-size: 14pt; margin-top: 2pt; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 900px) {

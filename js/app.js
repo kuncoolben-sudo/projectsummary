@@ -669,13 +669,22 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
+  // The preview can be hidden (mobile form view), in which case the embedded font has not been
+  // requested yet, so load it explicitly before printing.
+  function fontsReady() {
+    if (!document.fonts) return null;
+    return Promise.all(['400', '700'].map(w => document.fonts.load(`${w} 16pt "TH Sarabun New"`)))
+      .then(() => document.fonts.ready)
+      .catch(() => null);
+  }
+
   function savePdf() {
     const prevTitle = document.title;
     document.title = `สรุปโครงการ ${state.project || ''} ปีงบประมาณ ${state.year}`.trim();
     // Wait for images so nothing is missing from the PDF.
     const imgs = $$('#doc img');
     Promise.all(imgs.map(img => img.complete ? null : new Promise(r => { img.onload = img.onerror = r; })))
-      .then(() => (document.fonts ? document.fonts.ready : null))
+      .then(fontsReady)
       .then(() => {
         window.print();
         setTimeout(() => { document.title = prevTitle; }, 500);
