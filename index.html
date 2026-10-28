@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ระบบสรุปโครงการ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar no-print">
+    <div class="brand">
+      <img src="assets/school-logo.png" alt="">
+      <div>
+        <strong>ระบบสรุปโครงการ</strong>
+        <small>การประเมินผลโครงการตามแผนปฏิบัติการ</small>
+      </div>
+    </div>
+    <div class="actions">
+      <button type="button" id="btnNew" class="btn ghost">เริ่มโครงการใหม่</button>
+      <button type="button" id="btnSample" class="btn ghost">โหลดตัวอย่าง</button>
+      <button type="button" id="btnExport" class="btn ghost">ส่งออกข้อมูล (.json)</button>
+      <label class="btn ghost">นำเข้าข้อมูล<input type="file" id="fileImport" accept="application/json,.json" hidden></label>
+      <button type="button" id="btnPdf" class="btn primary">บันทึกเป็น PDF</button>
+    </div>
+  </header>
+
+  <nav class="mobile-switch no-print">
+    <button type="button" data-view="form" class="active">กรอกข้อมูล</button>
+    <button type="button" data-view="preview">ตัวอย่างเอกสาร</button>
+  </nav>
+
+  <main class="layout">
+    <!-- ======================= FORM ======================= -->
+    <section class="editor no-print" id="editor">
+      <details open>
+        <summary>1. ข้อมูลทั่วไป</summary>
+        <div class="grid">
+          <label class="span2">ชื่อโครงการ<input data-bind="project"></label>
+          <label>ปีงบประมาณ<input data-bind="year" inputmode="numeric"></label>
+          <label>กลุ่มงาน<input data-bind="workGroup"></label>
+          <label>ลักษณะโครงการ
+            <select data-bind="projectType"><option value="new">ใหม่</option><option value="continuing">ต่อเนื่อง</option></select>
+          </label>
+          <label>สถานะการดำเนินการ
+            <select data-bind="status">
+              <option value="done">ดำเนินการแล้วเสร็จ</option>
+              <option value="doing">กำลังดำเนินการ</option>
+              <option value="notyet">ยังไม่ได้ดำเนินการ</option>
+            </select>
+          </label>
+          <label>หัวหน้าโครงการ / ผู้รับผิดชอบ<input data-bind="owner"></label>
+          <label>ตำแหน่ง<input data-bind="ownerPosition"></label>
+          <label>ชื่อโรงเรียน (สั้น)<input data-bind="school"></label>
+          <label>ชื่อโรงเรียน (เต็ม)<input data-bind="schoolFull"></label>
+          <label class="span2">สำนักงานเขตพื้นที่การศึกษา<input data-bind="office"></label>
+          <label>สังกัด<input data-bind="obec"></label>
+          <label>กระทรวง<input data-bind="ministry"></label>
+          <label>ผู้อำนวยการโรงเรียน<input data-bind="director"></label>
+          <label>ตำแหน่งผู้อำนวยการ<input data-bind="directorPosition"></label>
+        </div>
+      </details>
+
+      <details>
+        <summary>2. คำนำ และบันทึกข้อความ</summary>
+        <div class="grid">
+          <label class="span2">คำนำ (เว้นบรรทัดเพื่อขึ้นย่อหน้าใหม่)<textarea data-bind="preface" rows="10"></textarea></label>
+          <label>ที่ (เลขที่หนังสือ)<input data-bind="memoNo"></label>
+          <label>วันที่<input data-bind="memoDate"></label>
+          <label class="span2">ปัญหาและอุปสรรค (บันทึกข้อความ)<textarea data-bind="memoProblems" rows="2"></textarea></label>
+          <label class="span2">ข้อเสนอแนะ (บันทึกข้อความ)<textarea data-bind="memoSuggestions" rows="2"></textarea></label>
+        </div>
+      </details>
+
+      <details>
+        <summary>3. วัตถุประสงค์ ระยะเวลา และผู้เกี่ยวข้อง</summary>
+        <h4>วัตถุประสงค์</h4>
+        <div class="list" data-list="objectives"></div>
+        <div class="grid">
+          <label>เริ่มตามแผน<input data-bind="planStart"></label>
+          <label>สิ้นสุดตามแผน<input data-bind="planEnd"></label>
+          <label>เริ่มจริง<input data-bind="actualStart"></label>
+          <label>สิ้นสุดจริง<input data-bind="actualEnd"></label>
+          <label>สรุปเวลาดำเนินการ
+            <select data-bind="timing">
+              <option value="onplan">ตามแผน</option>
+              <option value="early">เร็วกว่าแผน</option>
+              <option value="late">ช้ากว่าแผน</option>
+            </select>
+          </label>
+          <label>ช้ากว่าแผน เพราะ<input data-bind="lateReason"></label>
+        </div>
+        <h4>บุคคลที่เกี่ยวข้องในการจัดกิจกรรม</h4>
+        <div class="list" data-list="participants"></div>
+      </details>
+
+      <details>
+        <summary>4. ขั้นตอนการปฏิบัติงาน</summary>
+        <div class="table-editor" id="stepsEditor"></div>
+        <button type="button" class="btn small" id="addStep">+ เพิ่มขั้นตอน</button>
+      </details>
+
+      <details>
+        <summary>5. งบประมาณ และตัวชี้วัด</summary>
+        <div class="grid">
+          <label>งบประมาณที่จัดสรรตามแผน (บาท)<input data-bind="budgetPlan" type="number" min="0" step="any"></label>
+          <label>งบประมาณที่ใช้จริง (บาท)<input data-bind="budgetActual" type="number" min="0" step="any"></label>
+        </div>
+        <p class="hint" id="budgetHint"></p>
+        <h4>ตัวชี้วัดความสำเร็จ (เป้าหมาย)</h4>
+        <div class="list" data-list="indicators"></div>
+        <div class="grid">
+          <label class="span2">สภาพปัญหา / อุปสรรค<textarea data-bind="problems" rows="2"></textarea></label>
+          <label class="span2">จุดเด่น<textarea data-bind="strengths" rows="2"></textarea></label>
+          <label class="span2">จุดด้อย<textarea data-bind="weaknesses" rows="2"></textarea></label>
+          <label class="span2">ข้อเสนอแนะเพื่อพัฒนาครั้งต่อไป<textarea data-bind="improvements" rows="2"></textarea></label>
+          <label class="span2">ความคิดเห็นผู้บริหาร (เว้นว่างไว้ให้เขียนด้วยมือได้)<textarea data-bind="directorComment" rows="2"></textarea></label>
+        </div>
+      </details>
+
+      <details>
+        <summary>6. แบบติดตามและประเมินผลเมื่อสิ้นสุดโครงการ</summary>
+        <h4>การดำเนินการ</h4>
+        <div class="list" data-list="followSteps"></div>
+        <div class="grid">
+          <label class="span2">ปัญหาและอุปสรรค<textarea data-bind="followProblems" rows="2"></textarea></label>
+          <label class="span2">วิธีการแก้ไข<textarea data-bind="followSolutions" rows="2"></textarea></label>
+        </div>
+        <h4>สรุปผลการดำเนินงาน</h4>
+        <div class="list" data-list="followResults"></div>
+        <div class="grid">
+          <label class="span2">ข้อเสนอแนะในการดำเนินงานครั้งต่อไป<textarea data-bind="followSuggestions" rows="2"></textarea></label>
+        </div>
+      </details>
+
+      <details>
+        <summary>7. แบบประเมินผลการปฏิบัติการ</summary>
+        <div class="checks">
+          ผู้ประเมิน:
+          <label><input type="checkbox" data-bind="evaluators.teacher"> ครู</label>
+          <label><input type="checkbox" data-bind="evaluators.student"> นักเรียน</label>
+          <label><input type="checkbox" data-bind="evaluators.parent"> ผู้ปกครอง</label>
+        </div>
+        <p class="hint">กรอกจำนวนผู้ตอบ (ความถี่) ในแต่ละระดับ ระบบจะคำนวณร้อยละให้อัตโนมัติ</p>
+        <div class="rating-editor" data-rating="evalItems"></div>
+        <button type="button" class="btn small" data-add-rating="evalItems">+ เพิ่มรายการ</button>
+        <p class="result" id="evalResult"></p>
+      </details>
+
+      <details>
+        <summary>8. แบบประเมินความพึงพอใจ</summary>
+        <div class="grid">
+          <label class="span2">คำอธิบายรายงานความพึงพอใจ<textarea data-bind="satIntro" rows="4"></textarea></label>
+        </div>
+        <div class="rating-editor" data-rating="satItems"></div>
+        <button type="button" class="btn small" data-add-rating="satItems">+ เพิ่มรายการ</button>
+        <p class="result" id="satResult"></p>
+      </details>
+
+      <details>
+        <summary>9. ภาคผนวก (ภาพกิจกรรม)</summary>
+        <div class="grid">
+          <label>หัวข้อภาคผนวก<input data-bind="appendixTitle"></label>
+          <label>จำนวนภาพต่อหน้า
+            <select data-bind="photosPerPage"><option value="1">1</option><option value="2">2</option><option value="4">4</option><option value="6">6</option></select>
+          </label>
+        </div>
+        <label class="btn small">+ เพิ่มรูปภาพ<input type="file" id="photoInput" accept="image/*" multiple hidden></label>
+        <div class="photo-list" id="photoList"></div>
+      </details>
+
+      <details>
+        <summary>10. การแสดงผล</summary>
+        <div class="grid">
+          <label>ภาพพื้นหลังหน้าปก
+            <input type="file" id="coverInput" accept="image/*">
+          </label>
+          <label>&nbsp;<button type="button" class="btn small" id="coverReset">ใช้ภาพพื้นหลังเริ่มต้น</button></label>
+          <label>ตราโรงเรียน (หน้าปกย่อย)
+            <input type="file" id="logoInput" accept="image/*">
+          </label>
+          <label>&nbsp;<button type="button" class="btn small" id="logoReset">ใช้ตราเริ่มต้น</button></label>
+        </div>
+        <h4>เลือกหน้าที่จะพิมพ์</h4>
+        <div class="checks wrap" id="sectionToggles"></div>
+      </details>
+      <p class="saved" id="saveStatus"></p>
+    </section>
+
+    <!-- ======================= PREVIEW ======================= -->
+    <section class="preview" id="previewPane">
+      <div class="zoombar no-print">
+        <button type="button" class="btn small" data-zoom="-">−</button>
+        <span id="zoomLabel">100%</span>
+        <button type="button" class="btn small" data-zoom="+">+</button>
+      </div>
+      <div class="doc" id="doc"></div>
+    </section>
+  </main>
+
+  <div class="toast no-print" id="toast" role="status"></div>
+  <script src="js/app.js"></script>
+</body>
+</html>
