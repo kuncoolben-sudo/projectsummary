@@ -232,7 +232,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .cover-main .c-owner { font-size: 24pt; font-weight: 700; }
 .cover-main .c-school { margin-top: auto; margin-bottom: 80mm; font-size: 24pt; font-weight: 700; line-height: 1.3; }
 
-.cover-sub { justify-content: flex-start; padding: 30mm 25mm; }
+/* .sheet.cover-sub (not .cover-sub) so it beats the padding: 0 of .sheet.cover on screen too */
+.sheet.cover-sub { justify-content: flex-start; padding: 40mm 30mm 35mm; }
 .cover-sub .c-title { font-size: 24pt; font-weight: 700; line-height: 1.3; }
 .cover-sub .c-sub { font-size: 22pt; font-weight: 700; line-height: 1.3; }
 .cover-sub img.logo { width: 50mm; margin: 16mm 0; }
@@ -323,6 +324,6 @@ table.t .lvl small { display: block; font-weight: 400; }
     width: 210mm; height: 296.5mm;
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
-  .sheet.cover-sub { padding: 30mm 25mm; }
+  .sheet.cover-sub { padding: 40mm 30mm 35mm; }
   table.t th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
