@@ -162,6 +162,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 }
 #zoomLabel { min-width: 44px; text-align: center; font-size: 13px; }
 
+.btn.word { background: #2b579a; border-color: #2b579a; color: #fff; font-weight: 700; }
+.btn:disabled { opacity: .6; cursor: progress; }
 .btn.save { background: #fff; color: var(--accent); border-color: #fff; font-weight: 700; }
 .btn.save.dirty::after { content: " •"; color: #d93025; }
 #currentProject { display: block; max-width: 46ch; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
