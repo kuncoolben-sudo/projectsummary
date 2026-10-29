@@ -547,6 +547,8 @@
     }
 
     if (on('appendix') && s.photos.length) {
+      // divider page before the photos
+      pages.push('<div class="sheet cover appendix-cover"><div class="a-title">ภาคผนวก</div></div>');
       const per = parseInt(s.photosPerPage, 10) || 2;
       for (let i = 0; i < s.photos.length; i += per) {
         const chunk = s.photos.slice(i, i + per);
