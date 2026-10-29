@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ระบบสรุปโครงการ</title>
+  <title>ระบบเสนอและสรุปโครงการ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
     <div class="brand">
       <img src="assets/school-logo.png" alt="">
       <div>
-        <strong>ระบบสรุปโครงการ</strong>
+        <strong>ระบบเสนอและสรุปโครงการ</strong>
         <small id="currentProject">การประเมินผลโครงการตามแผนปฏิบัติการ</small>
       </div>
     </div>
@@ -38,16 +38,30 @@
   <main class="layout">
     <!-- ======================= FORM ======================= -->
     <section class="editor no-print" id="editor">
-      <details open>
-        <summary>1. ข้อมูลทั่วไป</summary>
+      <div class="doc-switch" role="tablist" aria-label="เลือกเอกสาร">
+        <button type="button" role="tab" data-doc-btn="proposal">แบบเสนอโครงการ</button>
+        <button type="button" role="tab" data-doc-btn="summary">รายงานสรุปโครงการ</button>
+      </div>
+      <p class="hint doc-hint" data-doc="proposal">ชื่อโครงการ วัตถุประสงค์ กิจกรรม ระยะเวลา งบประมาณ และตัวชี้วัด ใช้ร่วมกับรายงานสรุปโครงการ เมื่อโครงการเสร็จ สลับไปที่ "รายงานสรุปโครงการ" ได้เลยโดยไม่ต้องกรอกซ้ำ</p>
+      <p class="hint doc-hint" data-doc="summary">ข้อมูลที่กรอกไว้ในแบบเสนอโครงการ (ชื่อโครงการ วัตถุประสงค์ กิจกรรม ระยะเวลา งบประมาณ ตัวชี้วัด) ถูกนำมาใช้ในรายงานนี้อัตโนมัติ</p>
+
+      <details open data-doc="both">
+        <summary>ข้อมูลทั่วไป</summary>
         <div class="grid">
           <label class="span2">ชื่อโครงการ<input data-bind="project"></label>
           <label>ปีงบประมาณ<input data-bind="year" inputmode="numeric"></label>
-          <label>กลุ่มงาน<input data-bind="workGroup"></label>
+          <label>ขั้นตอนของโครงการ
+            <select data-bind="stage">
+              <option value="proposal">เสนอโครงการ</option>
+              <option value="running">กำลังดำเนินการ</option>
+              <option value="done">สรุปผลแล้ว</option>
+            </select>
+          </label>
+          <label>กลุ่มงานรับผิดชอบ<input data-bind="workGroup"></label>
           <label>ลักษณะโครงการ
             <select data-bind="projectType"><option value="new">ใหม่</option><option value="continuing">ต่อเนื่อง</option></select>
           </label>
-          <label>สถานะการดำเนินการ
+          <label data-doc="summary">สถานะการดำเนินการ
             <select data-bind="status">
               <option value="done">ดำเนินการแล้วเสร็จ</option>
               <option value="doing">กำลังดำเนินการ</option>
@@ -56,64 +70,128 @@
           </label>
           <label>หัวหน้าโครงการ / ผู้รับผิดชอบ<input data-bind="owner"></label>
           <label>ตำแหน่ง<input data-bind="ownerPosition"></label>
+        </div>
+        <h4>ข้อมูลโรงเรียนและผู้ลงนาม</h4>
+        <div class="grid">
           <label>ชื่อโรงเรียน (สั้น)<input data-bind="school"></label>
           <label>ชื่อโรงเรียน (เต็ม)<input data-bind="schoolFull"></label>
           <label class="span2">สำนักงานเขตพื้นที่การศึกษา<input data-bind="office"></label>
+          <label>ชื่อย่อเขตพื้นที่ (เช่น สพป.นครปฐม เขต 2)<input data-bind="officeShort"></label>
           <label>สังกัด<input data-bind="obec"></label>
           <label>กระทรวง<input data-bind="ministry"></label>
           <label>ผู้อำนวยการโรงเรียน<input data-bind="director"></label>
           <label>ตำแหน่งผู้อำนวยการ<input data-bind="directorPosition"></label>
+          <label data-doc="proposal">รองผู้อำนวยการ (ผู้อนุมัติโครงการ)<input data-bind="deputy" placeholder="เว้นว่างถ้าไม่มี"></label>
+          <label data-doc="proposal">ตำแหน่งรองผู้อำนวยการ<input data-bind="deputyPosition"></label>
         </div>
       </details>
 
-      <details>
-        <summary>2. คำนำ และบันทึกข้อความ</summary>
+      <details data-doc="proposal">
+        <summary>ความสอดคล้อง</summary>
         <div class="grid">
-          <label class="span2">คำนำ (เว้นบรรทัดเพื่อขึ้นย่อหน้าใหม่)<textarea data-bind="preface" rows="10"></textarea></label>
-          <label>ที่ (เลขที่หนังสือ)<input data-bind="memoNo"></label>
-          <label>วันที่<input data-bind="memoDate"></label>
-          <label class="span2">ปัญหาและอุปสรรค (บันทึกข้อความ)<textarea data-bind="memoProblems" rows="2"></textarea></label>
-          <label class="span2">ข้อเสนอแนะ (บันทึกข้อความ)<textarea data-bind="memoSuggestions" rows="2"></textarea></label>
+          <label class="span2">นโยบายและจุดเน้น สพฐ.<input data-bind="policyFocus"></label>
+        </div>
+        <h4>ยุทธศาสตร์ชาติ 20 ปี</h4>
+        <div class="checks col">
+          <label><input type="checkbox" data-bind="natStrategy.hr"> ด้านการพัฒนาและเสริมสร้างศักยภาพทรัพยากรมนุษย์</label>
+          <label><input type="checkbox" data-bind="natStrategy.admin"> ด้านการปรับสมดุลและพัฒนาระบบบริหารจัดการภาครัฐ</label>
+        </div>
+        <div class="grid">
+          <label class="span2">อื่น ๆ (ระบุ)<input data-bind="natStrategy.other"></label>
+          <label class="span2">กลยุทธ์ สพฐ. — กลยุทธ์ที่<input data-bind="obecStrategy"></label>
+          <label class="span2">มาตรฐานที่ 1 คุณภาพผู้เรียน — ตัวบ่งชี้ที่<input data-bind="std1"></label>
+          <label class="span2">มาตรฐานที่ 2 กระบวนการบริหารและการจัดการ — ตัวบ่งชี้ที่<input data-bind="std2"></label>
+          <label class="span2">มาตรฐานที่ 3 กระบวนการจัดการเรียนการสอน — ตัวบ่งชี้ที่<input data-bind="std3"></label>
+          <label class="span2">กลยุทธ์เขตพื้นที่การศึกษา — กลยุทธ์ที่<input data-bind="areaStrategy"></label>
+          <label class="span2">กลยุทธ์โรงเรียน — กลยุทธ์ที่<input data-bind="schoolStrategy"></label>
         </div>
       </details>
 
-      <details>
-        <summary>3. วัตถุประสงค์ ระยะเวลา และผู้เกี่ยวข้อง</summary>
+      <details data-doc="proposal">
+        <summary>หลักการและเหตุผล และเป้าหมาย</summary>
+        <div class="grid">
+          <label class="span2">หลักการและเหตุผล (เว้นบรรทัดเพื่อขึ้นย่อหน้าใหม่)<textarea data-bind="rationale" rows="9"></textarea></label>
+          <label class="span2">เป้าหมายเชิงปริมาณ (ผลผลิต)<textarea data-bind="targetQuantity" rows="2"></textarea></label>
+          <label class="span2">เป้าหมายเชิงคุณภาพ (ผลลัพธ์)<textarea data-bind="targetQuality" rows="2"></textarea></label>
+        </div>
+      </details>
+
+      <details data-doc="both">
+        <summary>วัตถุประสงค์ และระยะเวลา</summary>
         <h4>วัตถุประสงค์</h4>
         <div class="list" data-list="objectives"></div>
         <div class="grid">
-          <label>เริ่มตามแผน<input data-bind="planStart"></label>
-          <label>สิ้นสุดตามแผน<input data-bind="planEnd"></label>
-          <label>เริ่มจริง<input data-bind="actualStart"></label>
-          <label>สิ้นสุดจริง<input data-bind="actualEnd"></label>
-          <label>สรุปเวลาดำเนินการ
+          <label>เริ่มตามแผน<input data-bind="planStart" placeholder="เช่น ตุลาคม 2568"></label>
+          <label>สิ้นสุดตามแผน<input data-bind="planEnd" placeholder="เช่น กันยายน 2569"></label>
+          <label data-doc="summary">เริ่มจริง<input data-bind="actualStart"></label>
+          <label data-doc="summary">สิ้นสุดจริง<input data-bind="actualEnd"></label>
+          <label data-doc="summary">สรุปเวลาดำเนินการ
             <select data-bind="timing">
               <option value="onplan">ตามแผน</option>
               <option value="early">เร็วกว่าแผน</option>
               <option value="late">ช้ากว่าแผน</option>
             </select>
           </label>
-          <label>ช้ากว่าแผน เพราะ<input data-bind="lateReason"></label>
+          <label data-doc="summary">ช้ากว่าแผน เพราะ<input data-bind="lateReason"></label>
         </div>
-        <h4>บุคคลที่เกี่ยวข้องในการจัดกิจกรรม</h4>
-        <div class="list" data-list="participants"></div>
+        <div data-doc="summary">
+          <h4>บุคคลที่เกี่ยวข้องในการจัดกิจกรรม</h4>
+          <div class="list" data-list="participants"></div>
+        </div>
       </details>
 
-      <details>
-        <summary>4. ขั้นตอนการปฏิบัติงาน</summary>
+      <details data-doc="both">
+        <summary>กิจกรรมและขั้นตอนการปฏิบัติงาน</summary>
         <div class="table-editor" id="stepsEditor"></div>
         <button type="button" class="btn small" id="addStep">+ เพิ่มขั้นตอน</button>
       </details>
 
-      <details>
-        <summary>5. งบประมาณ และตัวชี้วัด</summary>
-        <div class="grid">
+      <details data-doc="both">
+        <summary>งบประมาณ</summary>
+        <div data-doc="proposal">
+          <h4>รายละเอียดการใช้งบประมาณ (งบดำเนินงาน, บาท)</h4>
+          <div class="rating-editor" id="budgetEditor"></div>
+          <button type="button" class="btn small" id="addBudgetItem">+ เพิ่มรายการ</button>
+          <h4>แหล่งงบประมาณ (บาท)</h4>
+          <div class="grid">
+            <label>เงินอุดหนุน (ค่าจัดการเรียนการสอน)<input data-bind="budgetSources.teaching" type="number" min="0" step="any"></label>
+            <label>เงินอุดหนุน (กิจกรรมพัฒนาผู้เรียน)<input data-bind="budgetSources.activity" type="number" min="0" step="any"></label>
+            <label>เงินรายได้สถานศึกษา<input data-bind="budgetSources.income" type="number" min="0" step="any"></label>
+            <label>อื่น ๆ (จำนวนเงิน)<input data-bind="budgetSources.other" type="number" min="0" step="any"></label>
+            <label class="span2">อื่น ๆ (ระบุแหล่งงบประมาณ)<input data-bind="budgetSources.otherName"></label>
+          </div>
+          <p class="hint" id="sourcesHint"></p>
+        </div>
+        <div class="grid" data-doc="summary">
           <label>งบประมาณที่จัดสรรตามแผน (บาท)<input data-bind="budgetPlan" type="number" min="0" step="any"></label>
           <label>งบประมาณที่ใช้จริง (บาท)<input data-bind="budgetActual" type="number" min="0" step="any"></label>
         </div>
-        <p class="hint" id="budgetHint"></p>
-        <h4>ตัวชี้วัดความสำเร็จ (เป้าหมาย)</h4>
+        <p class="hint" id="budgetHint" data-doc="summary"></p>
+      </details>
+
+      <details data-doc="both">
+        <summary>ตัวชี้วัดความสำเร็จ</summary>
+        <h4><span data-doc="proposal">ตัวชี้วัดเชิงปริมาณ (KPIs)</span><span data-doc="summary">ตัวชี้วัดความสำเร็จของกิจกรรม (เป้าหมาย)</span></h4>
         <div class="list" data-list="indicators"></div>
+        <div data-doc="proposal">
+          <h4>ตัวชี้วัดเชิงคุณภาพ</h4>
+          <div class="list" data-list="kpiQuality"></div>
+          <h4>กลุ่มเป้าหมายผู้ได้รับผลประโยชน์</h4>
+          <div class="list" data-list="beneficiaries"></div>
+          <h4>การประเมินผลโครงการ</h4>
+          <div class="checks">
+            <label><input type="checkbox" data-bind="evalMethods.survey"> แบบสอบถาม</label>
+            <label><input type="checkbox" data-bind="evalMethods.form"> แบบประเมิน</label>
+          </div>
+          <div class="grid">
+            <label class="span2">อื่น ๆ (ระบุ)<input data-bind="evalMethods.other"></label>
+            <label class="span2">ผลที่คาดว่าจะได้รับ<textarea data-bind="expectedResults" rows="3"></textarea></label>
+          </div>
+        </div>
+      </details>
+
+      <details data-doc="summary">
+        <summary>ผลการดำเนินงาน และข้อเสนอแนะ</summary>
         <div class="grid">
           <label class="span2">สภาพปัญหา / อุปสรรค<textarea data-bind="problems" rows="2"></textarea></label>
           <label class="span2">จุดเด่น<textarea data-bind="strengths" rows="2"></textarea></label>
@@ -123,8 +201,19 @@
         </div>
       </details>
 
-      <details>
-        <summary>6. แบบติดตามและประเมินผลเมื่อสิ้นสุดโครงการ</summary>
+      <details data-doc="summary">
+        <summary>คำนำ และบันทึกข้อความ</summary>
+        <div class="grid">
+          <label class="span2">คำนำ (เว้นบรรทัดเพื่อขึ้นย่อหน้าใหม่)<textarea data-bind="preface" rows="10"></textarea></label>
+          <label>ที่ (เลขที่หนังสือ)<input data-bind="memoNo"></label>
+          <label>วันที่<input data-bind="memoDate"></label>
+          <label class="span2">ปัญหาและอุปสรรค (บันทึกข้อความ)<textarea data-bind="memoProblems" rows="2"></textarea></label>
+          <label class="span2">ข้อเสนอแนะ (บันทึกข้อความ)<textarea data-bind="memoSuggestions" rows="2"></textarea></label>
+        </div>
+      </details>
+
+      <details data-doc="summary">
+        <summary>แบบติดตามและประเมินผลเมื่อสิ้นสุดโครงการ</summary>
         <h4>การดำเนินการ</h4>
         <div class="list" data-list="followSteps"></div>
         <div class="grid">
@@ -138,8 +227,8 @@
         </div>
       </details>
 
-      <details>
-        <summary>7. แบบประเมินผลการปฏิบัติการ</summary>
+      <details data-doc="summary">
+        <summary>แบบประเมินผลการปฏิบัติการ</summary>
         <div class="checks">
           ผู้ประเมิน:
           <label><input type="checkbox" data-bind="evaluators.teacher"> ครู</label>
@@ -152,8 +241,8 @@
         <p class="result" id="evalResult"></p>
       </details>
 
-      <details>
-        <summary>8. แบบประเมินความพึงพอใจ</summary>
+      <details data-doc="summary">
+        <summary>แบบประเมินความพึงพอใจ</summary>
         <div class="grid">
           <label class="span2">คำอธิบายรายงานความพึงพอใจ<textarea data-bind="satIntro" rows="4"></textarea></label>
         </div>
@@ -162,8 +251,8 @@
         <p class="result" id="satResult"></p>
       </details>
 
-      <details>
-        <summary>9. ภาคผนวก (ภาพกิจกรรม)</summary>
+      <details data-doc="summary">
+        <summary>ภาคผนวก (ภาพกิจกรรม)</summary>
         <div class="grid">
           <label>หัวข้อภาคผนวก<input data-bind="appendixTitle"></label>
           <label>จำนวนภาพต่อหน้า
@@ -175,8 +264,8 @@
         <div class="photo-list" id="photoList"></div>
       </details>
 
-      <details>
-        <summary>10. การแสดงผล</summary>
+      <details data-doc="summary">
+        <summary>การแสดงผล</summary>
         <div class="grid">
           <label>ภาพพื้นหลังหน้าปก
             <input type="file" id="coverInput" accept="image/*">
@@ -196,6 +285,7 @@
         <button type="button" class="btn small" data-zoom="-">−</button>
         <span id="zoomLabel">100%</span>
         <button type="button" class="btn small" data-zoom="+">+</button>
+        <span class="doc-label" id="docLabel"></span>
       </div>
       <div class="doc" id="doc"></div>
     </section>

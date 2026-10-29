@@ -95,6 +95,9 @@
   const BOX_SVG = on => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
     '<rect x="7" y="7" width="86" height="86" fill="#fff" stroke="#000" stroke-width="8"/>' +
     (on ? '<path d="M24 52 L43 71 L78 27" fill="none" stroke="#000" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>' : '') + '</svg>';
+  // the "( ✓ )" mark of the proposal form: a check without the box
+  const CHECK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+    '<path d="M18 52 L42 76 L84 22" fill="none" stroke="#000" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   let boxRids = null;
   const box = on => inlineImage(boxRids[on ? 1 : 0].png, 3.1, 3.1, boxRids[on ? 1 : 0].svg);
   const opt = (on, label) => box(on) + run(' ' + label + '      ');
@@ -108,7 +111,9 @@
     if (o.border) p += '<w:pBdr><w:bottom w:val="dotted" w:sz="6" w:space="1" w:color="000000"/></w:pBdr>';
     if (o.tabs) p += `<w:tabs>${o.tabs.map(t => `<w:tab w:val="${t.val || 'left'}" w:pos="${tw(t.pos)}"/>`).join('')}</w:tabs>`;
     if (o.before || o.after) p += `<w:spacing w:before="${ptTw(o.before || 0)}" w:after="${ptTw(o.after || 0)}"/>`;
-    if (o.indent || o.firstLine) p += `<w:ind w:left="${tw(o.indent || 0)}"${o.firstLine ? ` w:firstLine="${tw(o.firstLine)}"` : ''}/>`;
+    if (o.indent || o.firstLine || o.hanging) {
+      p += `<w:ind w:left="${tw(o.indent || 0)}"${o.firstLine ? ` w:firstLine="${tw(o.firstLine)}"` : ''}${o.hanging ? ` w:hanging="${tw(o.hanging)}"` : ''}/>`;
+    }
     if (o.align) p += `<w:jc w:val="${o.align}"/>`;
     if (o.sz) p += rPr({ sz: o.sz }); // paragraph mark size (affects empty lines)
     return `<w:p>${p ? `<w:pPr>${p}</w:pPr>` : ''}${content}</w:p>`;
@@ -228,13 +233,12 @@
 
   // ------------------------------------------------------------------ the report
   async function build(ctx) {
-    const { state: s, ratingSummary, qualityLevel, satLevel, fill, fmt, fmt2, money, or, LEVELS, getDims, printedWidth, PHOTO_BOX } = ctx;
+    const { state: s, ratingSummary, qualityLevel, satLevel, fill, fmt, fmt2, money, or, LEVELS, getDims, printedWidth, PHOTO_BOX, budgetTotals, proposalBudget } = ctx;
     const A = window.DOCX_ASSETS;
     media = []; rels = []; drawingId = 1;
     let skipped = 0;
     boxRids = [];
-    for (const on of [false, true]) {
-      const svg = BOX_SVG(on);
+    for (const svg of [BOX_SVG(false), BOX_SVG(true), CHECK_SVG]) {
       const png = await toPng('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg), 64, 64);
       boxRids.push({ png: addMedia(png, 'png'), svg: addMedia(enc.encode(svg), 'svg') });
     }
@@ -263,6 +267,90 @@
     const cell = (text, o = {}) => ({ c: textPara(text, { align: o.align || 'left' }, o.r || {}), ...o });
     const hcell = (text, o = {}) => ({ c: textPara(text, { align: 'center' }, { b: true, ...(o.r || {}) }), shade: 'F2F2F2', valign: 'center', ...o });
     const lineText = (arr, prefix) => arr.filter(t => String(t).trim()).map((t, i) => sub(prefix(i) + ' ' + t)).join('');
+
+    if (ctx.doc === 'proposal') {
+      // ---- แบบเสนอโครงการ: indents follow the template (0.5 inch = 12.7 mm steps)
+      const bt = budgetTotals(s), src = s.budgetSources, ns = s.natStrategy, em = s.evalMethods;
+      const items = arr => arr.filter(t => String(t).trim());
+      const pk = on => run('(') + (on ? inlineImage(boxRids[2].png, 3.1, 3.1, boxRids[2].svg) : run('   ')) + run(')');
+      const amount = v => (+v > 0 ? money(v) : '................................');
+      const dash = v => (v ? money(v) : '-');
+      const val = v => ((v && String(v).trim()) ? v : '....................');
+      const label = (l, v, o = {}) => para(run(l + ' ', B) + run(v), o);
+      const heading = (num, title, note, o = {}) => para(run(`${num} ${title}`, B) + (note ? run(` (${note})`) : ''),
+        Object.assign({ firstLine: 12.7, keepNext: true, before: 4 }, o));
+      const L1 = { indent: 12.7, firstLine: 12.7 };
+
+      body.push(label('โครงการ', s.project));
+      body.push(para(run('ลักษณะโครงการ  ', B) + opt(s.projectType === 'continuing', 'โครงการต่อเนื่อง') + opt(s.projectType === 'new', 'โครงการใหม่')));
+      body.push(label('กลุ่มงานรับผิดชอบ', s.workGroup));
+      body.push(label('สอดคล้องกับนโยบายและจุดเน้น สพฐ.', s.policyFocus));
+      body.push(label('ผู้รับผิดชอบโครงการ', s.owner));
+
+      body.push(textPara('1. ความสอดคล้อง', { before: 4, keepNext: true }, B));
+      body.push(para(run('1.1 ยุทธศาสตร์ชาติ 20 ปี (Z)') + tab + pk(ns.hr) + run(' ด้านการพัฒนาและเสริมสร้างศักยภาพทรัพยากรมนุษย์'),
+        { indent: 63.5, hanging: 50.8, tabs: [{ pos: 63.5 }] }));
+      body.push(para(pk(ns.admin) + run(' ด้านการปรับสมดุลและพัฒนาระบบบริหารจัดการภาครัฐ'), { indent: 63.5 }));
+      body.push(para(pk(!!ns.other.trim()) + run(' อื่น ๆ (ระบุ) ' + (ns.other.trim() || '......................................................')), { indent: 63.5 }));
+      body.push(textPara(`1.2 กลยุทธ์ สพฐ. (X) กลยุทธ์ที่ (ระบุ) ${val(s.obecStrategy)}`, { firstLine: 12.7 }));
+      body.push(textPara('1.3 มาตรฐานการศึกษา', { firstLine: 12.7 }));
+      body.push(textPara(`1.3.1 คุณภาพผู้เรียน มาตรฐานที่ 1 ตัวบ่งชี้ที่ ${val(s.std1)}`, L1));
+      body.push(textPara(`1.3.2 กระบวนการบริหารและการจัดการ มาตรฐานที่ 2 ตัวบ่งชี้ที่ ${val(s.std2)}`, L1));
+      body.push(textPara(`1.3.3 กระบวนการจัดการเรียนการสอน มาตรฐานที่ 3 ตัวบ่งชี้ที่ ${val(s.std3)}`, L1));
+      body.push(textPara(`1.4 กลยุทธ์ ${or(s.officeShort, 'สพป.')} (X) กลยุทธ์ที่ (ระบุ) ${val(s.areaStrategy)}`, { firstLine: 12.7 }));
+      body.push(textPara(`1.5 กลยุทธ์โรงเรียน (X) กลยุทธ์ที่ (ระบุ) ${val(s.schoolStrategy)}`, { firstLine: 12.7 }));
+      body.push(textPara(`1.6 นโยบายและจุดเน้น สพฐ. ${val(s.policyFocus)}`, { firstLine: 12.7 }));
+
+      body.push(textPara('2. รายละเอียดโครงการ (X)', { before: 4, keepNext: true }, B));
+      body.push(heading('2.1', 'หลักการและเหตุผล', 'แสดงปัญหา เหตุผล ความจำเป็นต้องมีโครงการ และผลประโยชน์ที่จะได้รับจากการดำเนินงานตามโครงการ'));
+      body.push(textBlock(s.rationale, Object.assign({ align: 'thaiDistribute' }, L1)));
+      body.push(heading('2.2', 'วัตถุประสงค์', 'แสดงความต้องการว่าจะให้เกิดอะไรขึ้น ต้องชัดเจน ปฏิบัติได้ วัดได้ ประเมินได้'));
+      items(s.objectives).forEach((o, i) => body.push(textPara(`${i + 1}. ${o}`, L1)));
+      body.push(heading('2.3', 'เป้าหมาย', 'ต้องสอดคล้องกับวัตถุประสงค์'));
+      body.push(textPara('1) เชิงปริมาณ (ผลผลิต) (ระบุจำนวน ปริมาณของผลงานที่เกิดขึ้นหลังจากดำเนินการเสร็จ)', Object.assign({ keepNext: true }, L1)));
+      body.push(textBlock(s.targetQuantity, { indent: 12.7, firstLine: 25.4 }));
+      body.push(textPara('2) เชิงคุณภาพ (ผลลัพธ์) (ระบุผลประโยชน์ที่เกิดขึ้นหลังจากดำเนินการเสร็จ)', Object.assign({ keepNext: true }, L1)));
+      body.push(textBlock(s.targetQuality, { indent: 12.7, firstLine: 25.4 }));
+      body.push(heading('2.4', 'กิจกรรมและวิธีดำเนินงาน'));
+      body.push(table([
+        [hcell('ที่'), hcell('รายละเอียด/กิจกรรม'), hcell('ระยะเวลา'), hcell('ผู้รับผิดชอบ')],
+        ...s.steps.map((st, i) => [cell(`${i + 1}.`, { align: 'center' }), cell(st.activity), cell(st.period, { align: 'center' }), cell(st.owner)])
+      ], [13, 67, 35, 45], { headerRows: 1 }));
+      body.push(para(run('2.5 ระยะเวลาดำเนินโครงการ', B) + run(` ${val(s.planStart)} – ${val(s.planEnd)}`), { firstLine: 12.7, before: 6 }));
+      body.push(para(run('2.6 งบประมาณ', B) + run(` ${money(proposalBudget(s))} บาท`), { firstLine: 12.7, before: 4, keepNext: true }));
+      body.push(para(pk(src.teaching > 0) + run(` เงินอุดหนุน (ค่าจัดการเรียนการสอน) จำนวน ${amount(src.teaching)} บาท`), L1));
+      body.push(para(pk(src.activity > 0) + run(` เงินอุดหนุน (กิจกรรมพัฒนาผู้เรียน) จำนวน ${amount(src.activity)} บาท`), L1));
+      body.push(para(pk(src.income > 0) + run(` เงินรายได้สถานศึกษา จำนวน ${amount(src.income)} บาท`), L1));
+      body.push(para(pk(src.other > 0) + run(` อื่น ๆ (ระบุ) ${src.otherName || '........................................'} จำนวน ${amount(src.other)} บาท`), L1));
+      body.push(heading('2.7', 'รายละเอียดการใช้งบประมาณ', 'ขอถัวจ่ายทุกรายการ'));
+      const sh = { vmerge: 'continue', shade: 'F2F2F2' }, num = (v, o = {}) => cell(dash(v), Object.assign({ align: 'right' }, o));
+      body.push(table([
+        [hcell('กิจกรรมและรายละเอียด\nการใช้งบประมาณ', { vmerge: 'restart' }), { ...hcell('งบประมาณจำแนกตามรายการ'), span: 3 }, hcell('รวม\nงบประมาณ', { vmerge: 'restart' })],
+        [sh, { ...hcell('งบดำเนินงาน'), span: 3 }, sh],
+        [sh, hcell('ตอบแทน'), hcell('ใช้สอย'), hcell('วัสดุ'), sh],
+        ...bt.rows.filter(r => r.text.trim() || r.total).map((r, i) => [cell(`${i + 1}. ${r.text}`), num(r.comp), num(r.use), num(r.mat), num(r.total)]),
+        [{ ...hcell('รวมทั้งสิ้น'), shade: null }, num(bt.comp, { r: B }), num(bt.use, { r: B }), num(bt.mat, { r: B }), num(bt.total, { r: B })]
+      ], [51.6, 25.5, 25.5, 25.5, 31.9], { headerRows: 3 }));
+      body.push(heading('2.8', 'ดัชนีชี้วัดความสำเร็จ (KPIs)', '', { before: 6 }));
+      body.push(para(run('2.8.1 ตัวชี้วัดเชิงปริมาณ', B) + run(' (ความสำเร็จตามวัตถุประสงค์ของโครงการที่สามารถวัดได้เชิงตัวเลข)'), { firstLine: 20, keepNext: true }));
+      items(s.indicators).forEach((t, i) => body.push(textPara(`${i + 1}) ${t}`, { firstLine: 38.1 })));
+      body.push(para(run('2.8.2 ตัวชี้วัดเชิงคุณภาพ', B) + run(' (การวัดความสำเร็จตามวัตถุประสงค์ของโครงการว่ามีคุณภาพอย่างไร เช่น คุณภาพชีวิต ความพึงพอใจของผู้รับบริการ การเปลี่ยนแปลงพฤติกรรม)'), { firstLine: 20, keepNext: true }));
+      items(s.kpiQuality).forEach((t, i) => body.push(textPara(`${i + 1}) ${t}`, { firstLine: 38.1 })));
+      body.push(heading('2.9', 'กลุ่มเป้าหมายผู้ได้รับผลประโยชน์'));
+      items(s.beneficiaries).forEach((t, i) => body.push(textPara(`2.9.${i + 1} ${t}`, { firstLine: 20 })));
+      body.push(heading('2.10', 'การประเมินผลโครงการ'));
+      body.push(para(pk(em.survey) + run(' แบบสอบถาม'), L1));
+      body.push(para(pk(em.form) + run(' แบบประเมิน'), L1));
+      body.push(para(pk(!!em.other.trim()) + run(' อื่น ๆ (ระบุ) ' + (em.other.trim() || '........................................................')), L1));
+      body.push(heading('2.11', 'ผลที่คาดว่าจะได้รับ'));
+      body.push(textBlock(s.expectedResults, Object.assign({ align: 'thaiDistribute' }, L1)));
+      // signatures: one block kept together, centred in the right part of the page like the template's text box
+      const sigs = [['ลงชื่อ...................................................ผู้เสนอโครงการ', `( ${s.owner} )`, `${s.ownerPosition}${s.school}`]];
+      if (s.deputy.trim()) sigs.push(['ลงชื่อ...................................................ผู้อนุมัติโครงการ', `( ${s.deputy} )`, s.deputyPosition]);
+      sigs.push(['ลงชื่อ...................................................ผู้อนุมัติโครงการ', `( ${s.director} )`, s.directorPosition]);
+      const lines = sigs.flatMap((blockLines, bi) => blockLines.map((l, li) => ({ l, before: li ? 0 : (bi ? 14 : 20) })));
+      lines.forEach((x, k) => body.push(textPara(x.l, { indent: 36, align: 'center', before: x.before, keepNext: k < lines.length - 1 })));
+    } else {
 
     // ---- cover
     if (on('cover')) {
@@ -480,6 +568,8 @@
       }
     }
 
+    } // end of the summary report
+
     if (!body.length) body.push(textPara('ยังไม่ได้เลือกหน้าที่จะแสดง', { align: 'center' }));
 
     // ---- package
@@ -503,7 +593,7 @@
       `</w:fonts>`;
     const xmlHead = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
     const relsXml = list => `${xmlHead}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${list.join('')}</Relationships>`;
-    const title = x(`สรุปโครงการ ${s.project || ''} ปีงบประมาณ ${s.year}`);
+    const title = x(`${ctx.doc === 'proposal' ? 'แบบเสนอโครงการ' : 'สรุปโครงการ'} ${s.project || ''} ปีงบประมาณ ${s.year}`);
     const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
     const core = `${xmlHead}<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" ` +
       `xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">` +

@@ -86,6 +86,28 @@ body {
 .preview { overflow: auto; position: relative; }
 .mobile-switch { display: none; }
 
+/* ---------- Document switch (proposal / summary) ---------- */
+.doc-switch {
+  position: sticky; top: -16px; z-index: 4;
+  display: flex; gap: 4px; padding: 4px; margin: -4px 0 8px;
+  background: var(--accent-soft); border-radius: 12px;
+}
+.doc-switch button {
+  flex: 1; font: inherit; font-size: 15px; font-weight: 700; padding: 8px 6px;
+  border: 0; border-radius: 9px; background: transparent; color: var(--accent); cursor: pointer;
+}
+.doc-switch button.active { background: var(--accent); color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+.doc-hint { margin: 0 2px 10px; }
+.doc-label { font-size: 13px; color: var(--accent); font-weight: 700; margin-left: 6px; }
+/* fields belonging to the other document are hidden */
+body[data-doc="proposal"] [data-doc="summary"],
+body[data-doc="summary"] [data-doc="proposal"] { display: none !important; }
+/* section numbers follow the visible sections */
+.editor { counter-reset: sec; }
+.editor > details { counter-increment: sec; }
+.editor > details > summary::before { content: counter(sec) ". "; }
+.checks.col { flex-direction: column; align-items: flex-start; gap: 4px; }
+
 details {
   border: 1px solid var(--ui-border);
   border-radius: 10px;
@@ -142,6 +164,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .rating-editor th { background: var(--accent-soft); }
 .rating-editor td input { padding: 4px; text-align: center; min-width: 42px; }
 .rating-editor td.item input { text-align: left; min-width: 160px; }
+.rating-editor td.sum { text-align: right; white-space: nowrap; padding: 0 6px; }
+.rating-editor tfoot th { text-align: right; padding: 0 6px; }
 .rating-editor td button { border: 0; background: none; color: #b3261e; cursor: pointer; font-size: 16px; }
 
 .photo-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-top: 10px; }
@@ -192,6 +216,10 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .pd-item .meta { font-size: 13px; color: var(--ui-muted); }
 .pd-item .badge { font-size: 12px; background: var(--accent); color: #fff; border-radius: 999px; padding: 1px 8px; margin-left: 6px; font-weight: 400; }
 .pd-item .acts { display: flex; gap: 4px; flex-wrap: wrap; }
+.stage { display: inline-block; font-size: 12px; border-radius: 999px; padding: 0 8px; margin-right: 4px; color: #fff; }
+.stage-proposal { background: #2b579a; }
+.stage-running { background: #b06000; }
+.stage-done { background: #137333; }
 .pd-foot { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 10px 18px 14px; border-top: 1px solid var(--ui-border); }
 .pd-foot .hint { margin: 0; }
 .pd-actions { display: flex; gap: 6px; }
@@ -303,9 +331,30 @@ table.t th, table.t td { border: 1px solid #000; padding: 1pt 5pt; vertical-alig
 table.t th { font-weight: 700; text-align: center; vertical-align: middle; background: #f2f2f2; }
 table.t td.c { text-align: center; }
 table.t tfoot td { font-weight: 700; }
+/* a normal row group: Chrome would otherwise repeat the totals row at every page break */
+table.t tfoot { display: table-row-group; }
 table.t tr { page-break-inside: avoid; }
 table.t .lvl { font-size: 14pt; line-height: 1.1; }
 table.t .lvl small { display: block; font-weight: 400; }
+
+/* Proposal form: indents follow the template (0.5 inch steps) */
+.sheet.prop .section { break-after: avoid; }
+.sheet.prop .i1 { padding-left: 12.7mm; }
+.sheet.prop .t1 { text-indent: 12.7mm; }
+.sheet.prop .t2 { text-indent: 25.4mm; }
+.sheet.prop .t20 { text-indent: 20mm; }
+.sheet.prop .t3 { text-indent: 38.1mm; }
+.sheet.prop .choice { display: grid; grid-template-columns: 50.8mm 1fr; padding-left: 12.7mm; }
+.sheet.prop .choice .opts { display: flex; flex-direction: column; }
+.sheet.prop .sign { margin-left: 36mm; justify-items: stretch; gap: 14pt; margin-top: 20pt; }
+.sheet.prop .sign .s { min-width: 0; }
+/* "( ✓ )" choice marks */
+.ck { display: inline-block; width: .9em; height: .7em; position: relative; vertical-align: -0.05em; }
+.ck.on::after {
+  content: ""; position: absolute; left: .32em; top: -.12em;
+  width: .2em; height: .5em; border: solid #000; border-width: 0 .1em .1em 0; transform: rotate(40deg);
+}
+table.t.budget td.c { text-align: right; padding-right: 8pt; }
 
 /* Appendix photos */
 .photos { display: grid; gap: 6mm; }
@@ -323,7 +372,9 @@ table.t .lvl small { display: block; font-weight: 400; }
 /* ---------- Responsive ---------- */
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; height: auto; }
-  .editor { border-right: 0; }
+  /* the page scrolls on phones, so the document switch sticks below the view switch */
+  .editor { border-right: 0; overflow: visible; }
+  .doc-switch { top: 43px; }
   .mobile-switch {
     display: flex; position: sticky; top: 0; z-index: 9;
     background: #fff; border-bottom: 1px solid var(--ui-border);
@@ -352,10 +403,12 @@ table.t .lvl small { display: block; font-weight: 400; }
   .layout { display: block; height: auto; }
   .preview { overflow: visible; display: block !important; }
   .doc { padding: 0; zoom: 1 !important; }
-  /* the small top padding keeps Thai stacked marks of a page's first line from bleeding onto the previous page */
+  /* the small top padding keeps Thai stacked marks of a page's first line from bleeding onto the previous page;
+     "clone" repeats it on every page a long sheet continues onto */
   .sheet {
     width: auto; min-height: 0; margin: 0; padding: 2mm 0 0; box-shadow: none;
     break-after: page;
+    -webkit-box-decoration-break: clone; box-decoration-break: clone;
   }
   .sheet:last-child { break-after: auto; }
   .sheet.cover {
