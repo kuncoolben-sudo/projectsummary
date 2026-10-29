@@ -4,8 +4,14 @@
 
   const STORAGE_KEY = 'project-summary:v1';
   const UI_KEY = 'project-summary:ui';
-  const DEFAULT_COVER = 'assets/cover-bg.jpg';
-  const DEFAULT_LOGO = 'assets/school-logo.png';
+  // Cover decoration is vector (SVG) so it is sharp at any print resolution; the emblem is the
+  // template's own bitmap, placed where it sat on the template cover.
+  const DEFAULT_COVER = 'assets/cover-bg.svg';
+  const DEFAULT_COVER_LOGO = 'assets/school-logo.png';
+  const MIN_DPI = 300;
+  // Largest uploads are scaled down to this many px on the long side; 3000 px still gives
+  // > 300 dpi in the largest photo slot (225 mm), 3600 px covers a full A4 cover (297 mm).
+  const PHOTO_MAX_SIDE = 3000, COVER_MAX_SIDE = 3600;
   const LEVELS = [
     { score: 5, label: 'มากที่สุด' },
     { score: 4, label: 'มาก' },
@@ -80,7 +86,7 @@
       appendixTitle: 'ภาคผนวก ภาพกิจกรรม',
       photosPerPage: '2',
       photos: [],
-      coverImage: '', logoImage: '',
+      coverImage: '',
       sections: Object.fromEntries(SECTIONS.map(([k]) => [k, true]))
     };
   }
@@ -154,6 +160,7 @@
     const out = Object.assign(base, data || {});
     out.evaluators = Object.assign(blankState().evaluators, out.evaluators || {});
     out.sections = Object.assign(blankState().sections, out.sections || {});
+    delete out.logoImage; // sub-cover logo was removed; drop it from older saved data
     ['objectives', 'participants', 'indicators', 'followSteps', 'followResults', 'steps', 'evalItems', 'satItems', 'photos']
       .forEach(k => { if (!Array.isArray(out[k])) out[k] = base[k]; });
     ['evalItems', 'satItems'].forEach(k => {
@@ -162,16 +169,25 @@
     return out;
   }
 
+  // The working copy goes to IndexedDB (full-resolution photos do not fit localStorage's ~5 MB);
+  // localStorage keeps a copy too when it fits, as a fallback for browsers without IndexedDB.
+  const WORKING_ID = '__working__';
   let saveTimer = null;
   function writeWorkingCopy() {
     saveTimer = null;
     const el = document.getElementById('saveStatus');
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      el.textContent = 'บันทึกอัตโนมัติในเบราว์เซอร์แล้ว ' + new Date().toLocaleTimeString('th-TH');
-    } catch (e) {
-      el.textContent = 'บันทึกอัตโนมัติไม่สำเร็จ (ข้อมูล/รูปภาพมีขนาดใหญ่) — กด "บันทึกโครงการ" หรือ "ส่งออกข้อมูล" เพื่อเก็บไว้';
-    }
+    state._autosavedAt = Date.now(); // lets init pick the newer of the two copies
+    let lsOk = true;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch (e) { lsOk = false; try { localStorage.removeItem(STORAGE_KEY); } catch (_) { /* ignore */ } }
+    const done = () => { el.textContent = 'บันทึกอัตโนมัติในเบราว์เซอร์แล้ว ' + new Date().toLocaleTimeString('th-TH'); };
+    dbPut({ id: WORKING_ID, data: state, updatedAt: Date.now() }).then(done).catch(() => {
+      if (lsOk) done();
+      else el.textContent = 'บันทึกอัตโนมัติไม่สำเร็จ — กด "บันทึกโครงการ" หรือ "ส่งออกข้อมูล" เพื่อเก็บไว้';
+    });
+  }
+  function loadWorkingCopy() {
+    return dbGet(WORKING_ID).then(rec => (rec ? normalize(rec.data) : null)).catch(() => null);
   }
   function save() {
     clearTimeout(saveTimer);
@@ -251,7 +267,8 @@
     if (on('cover')) {
       pages.push(`
       <div class="sheet cover cover-main">
-        <img class="cover-bg" src="${esc(s.coverImage || DEFAULT_COVER)}" alt="">
+        ${s.coverImage ? `<img class="cover-bg" src="${esc(s.coverImage)}" alt="">`
+          : `<img class="cover-bg" src="${DEFAULT_COVER}" alt=""><img class="cover-logo" src="${DEFAULT_COVER_LOGO}" alt="">`}
         <div class="c-title">การประเมินผลโครงการ</div>
         <div class="c-project">${esc(projectName)}</div>
         <div class="c-year">ปีงบประมาณ ${esc(s.year)}</div>
@@ -372,7 +389,6 @@
         <div class="c-sub">${esc(projectName)}</div>
         <div class="c-sub">${esc(s.schoolFull || s.school)}</div>
         <div class="c-sub">ปีงบประมาณ ${esc(s.year)}</div>
-        <img class="logo" src="${esc(s.logoImage || DEFAULT_LOGO)}" alt="">
         <div class="c-owner">${ownerLine}<br>${esc(s.ownerPosition)} ${esc(s.schoolFull || s.school)}</div>
         <div class="c-org">${esc(s.office)}<br>${esc(s.obec)}<br>${esc(s.ministry)}</div>
       </div>`;
@@ -491,6 +507,7 @@
     const diff = toNum(s.budgetPlan) - toNum(s.budgetActual);
     $('#budgetHint').textContent = diff === 0 ? 'ใช้งบประมาณตามแผน'
       : diff > 0 ? `ต่ำกว่าแผน ${money(diff)} บาท` : `สูงกว่าแผน ${money(-diff)} บาท`;
+    updateDpiInfo();
   }
 
   // ---------------------------------------------------------------- form binding
@@ -590,10 +607,74 @@
   }
 
   // Photos
+  // ---------------------------------------------------------------- print resolution
+  // Text and table lines print as vectors; only bitmaps have a resolution, which is their pixel
+  // size divided by the size they are printed at.
+  const dimsCache = new Map(); // image src -> { w, h }
+  function getDims(src) {
+    if (dimsCache.has(src)) return Promise.resolve(dimsCache.get(src));
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => { const d = { w: img.naturalWidth, h: img.naturalHeight }; dimsCache.set(src, d); resolve(d); };
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+  }
+  // Printed box (mm) of a photo for each "photos per page" layout: [column width, max height].
+  const PHOTO_BOX = { 1: [160, 225], 2: [160, 108], 4: [77, 105], 6: [77, 68] };
+  // Width (mm) at which an image of size d is printed in a boxW x maxH box (object-fit: contain).
+  const printedWidth = (d, boxW, maxH) => Math.min(boxW, maxH * d.w / d.h);
+  const dpiAt = (px, mm) => Math.round(px / (mm / 25.4));
+  const pxFor = mm => Math.ceil(mm / 25.4 * MIN_DPI);
+
+  // Every bitmap that will be printed, with its effective dpi.
+  function printedImages() {
+    const s = state, on = k => s.sections[k] !== false, items = [];
+    if (on('cover')) {
+      if (s.coverImage) {
+        items.push(getDims(s.coverImage).then(d => d && {
+          label: 'ภาพพื้นหลังหน้าปก', dpi: Math.min(dpiAt(d.w, 210), dpiAt(d.h, 297)),
+          need: `${pxFor(210)} × ${pxFor(297)} px`
+        }));
+      } else {
+        items.push(getDims(DEFAULT_COVER_LOGO).then(d => d && {
+          label: 'ตราโรงเรียนบนหน้าปก (ภาพจากไฟล์ต้นแบบ)', dpi: dpiAt(d.w, 37.9),
+          need: `ภาพพื้นหลังหน้าปกขนาด ${pxFor(210)} × ${pxFor(297)} px`
+        }));
+      }
+    }
+    if (on('appendix')) {
+      const [boxW, maxH] = PHOTO_BOX[parseInt(s.photosPerPage, 10)] || PHOTO_BOX[2];
+      s.photos.forEach((p, i) => items.push(getDims(p.src).then(d => {
+        if (!d) return null;
+        const mm = printedWidth(d, boxW, maxH);
+        return { label: `ภาพกิจกรรมที่ ${i + 1}${p.caption ? ` (${p.caption})` : ''}`, dpi: dpiAt(d.w, mm),
+                 need: `กว้างอย่างน้อย ${pxFor(mm)} px`, photo: i };
+      })));
+    }
+    return Promise.all(items).then(list => list.filter(Boolean));
+  }
+
+  function updateDpiInfo() {
+    printedImages().then(list => {
+      $$('#photoList .dpi').forEach(el => {
+        const it = list.find(x => x.photo === +el.dataset.dpiI);
+        el.textContent = it ? `${it.dpi} dpi${it.dpi < MIN_DPI ? ' ⚠' : ''}` : '';
+        el.className = 'dpi ' + (it && it.dpi < MIN_DPI ? 'low' : 'ok');
+        el.title = it && it.dpi < MIN_DPI ? `ต่ำกว่า ${MIN_DPI} dpi — ควรใช้รูป${it.need}` : 'ความละเอียดเมื่อพิมพ์';
+      });
+      const cover = list.find(x => x.photo == null);
+      $('#coverDpi').textContent = state.coverImage
+        ? `ภาพพื้นหลังที่อัปโหลด: ประมาณ ${cover ? cover.dpi : '-'} dpi เมื่อพิมพ์${cover && cover.dpi < MIN_DPI ? ` (ต่ำกว่า ${MIN_DPI} dpi ควรใช้ภาพ ${cover.need})` : ''}`
+        : `ภาพเริ่มต้น: ลวดลายเป็นภาพเวกเตอร์ คมชัดทุกความละเอียด ส่วนตราโรงเรียนมีความละเอียดประมาณ ${cover ? cover.dpi : '-'} dpi (จำกัดตามไฟล์ต้นแบบ)`;
+    });
+  }
+
   function renderPhotos() {
     $('#photoList').innerHTML = state.photos.map((p, i) => `
       <div class="photo-item" data-i="${i}">
         <img src="${esc(p.src)}" alt="">
+        <span class="dpi" data-dpi-i="${i}"></span>
         <input data-f="caption" value="${esc(p.caption)}" placeholder="คำบรรยายภาพ">
         <div class="tools"><button type="button" data-act="up">◀</button><button type="button" data-act="down">▶</button><button type="button" data-act="del" style="color:#b3261e">ลบ</button></div>
       </div>`).join('');
@@ -606,7 +687,9 @@
   }
 
   // Downscale uploaded images so the saved data stays small enough for localStorage/JSON.
-  function readImage(file, maxSide = 1600, quality = 0.85) {
+  // Keeps the original file untouched whenever it is no larger than maxSide, so photos are not
+  // recompressed and print at their full resolution; only bigger images are scaled down.
+  function readImage(file, maxSide = PHOTO_MAX_SIDE) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onerror = reject;
@@ -614,13 +697,22 @@
         const img = new Image();
         img.onerror = reject;
         img.onload = () => {
-          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+          const w = img.naturalWidth, h = img.naturalHeight;
+          if (/^image\/(jpeg|png|webp|gif)$/.test(file.type) && Math.max(w, h) <= maxSide) {
+            dimsCache.set(reader.result, { w, h });
+            return resolve(reader.result);
+          }
+          const scale = Math.min(1, maxSide / Math.max(w, h));
           const c = document.createElement('canvas');
-          c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+          c.width = Math.round(w * scale); c.height = Math.round(h * scale);
           const ctx = c.getContext('2d');
-          ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+          const png = file.type === 'image/png'; // keep transparency
+          if (!png) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); }
+          ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, c.width, c.height);
-          resolve(c.toDataURL('image/jpeg', quality));
+          const out = c.toDataURL(png ? 'image/png' : 'image/jpeg', 0.92);
+          dimsCache.set(out, { w: c.width, h: c.height });
+          resolve(out);
         };
         img.src = reader.result;
       };
@@ -698,7 +790,7 @@
       tx.onerror = tx.onabort = () => reject(tx.error);
     }));
   }
-  const dbAll = () => dbRun('readonly', st => st.getAll());
+  const dbAll = () => dbRun('readonly', st => st.getAll()).then(l => l.filter(r => r.id !== WORKING_ID));
   const dbGet = id => dbRun('readonly', st => st.get(id));
   const dbPut = rec => dbRun('readwrite', st => st.put(rec));
   const dbDelete = id => dbRun('readwrite', st => st.delete(id));
@@ -706,7 +798,7 @@
   const newId = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   // The project data without the editor's bookkeeping fields.
   function projectData(src) {
-    const { _id, _dirty, _savedAt, ...data } = src;
+    const { _id, _dirty, _savedAt, _autosavedAt, ...data } = src;
     return data;
   }
   function makeRecord(id, data) {
@@ -838,7 +930,12 @@
       .catch(() => null);
   }
 
-  function savePdf() {
+  async function savePdf() {
+    const low = await printedImages().then(l => l.filter(x => x.dpi < MIN_DPI));
+    if (low.length && !confirm(`รูปภาพต่อไปนี้มีความละเอียดต่ำกว่า ${MIN_DPI} dpi เมื่อพิมพ์:\n` +
+        low.map(x => `• ${x.label}: ประมาณ ${x.dpi} dpi (ควรใช้รูป${x.need})`).join('\n') +
+        `\n\nข้อความ เส้นตาราง และลวดลายหน้าปกใน PDF เป็นเวกเตอร์ คมชัดทุกความละเอียดอยู่แล้ว` +
+        `\nรูปจะคมชัดเท่าไฟล์ต้นฉบับเท่านั้น (ระบบไม่ลดความละเอียดรูป)\n\nบันทึก PDF ต่อหรือไม่?`)) return;
     const prevTitle = document.title;
     document.title = `สรุปโครงการ ${state.project || ''} ปีงบประมาณ ${state.year}`.trim();
     // Wait for images so nothing is missing from the PDF.
@@ -857,10 +954,15 @@
     if (msg) toast(msg);
   }
 
-  function init() {
+  async function init() {
     try { const ui = JSON.parse(localStorage.getItem(UI_KEY) || '{}'); if (ui.view) document.body.dataset.view = ui.view; } catch (e) { /* ignore */ }
     if (!document.body.dataset.view) document.body.dataset.view = 'form';
     $$('.mobile-switch button').forEach(b => b.classList.toggle('active', b.dataset.view === document.body.dataset.view));
+
+    // An IndexedDB write started while the page was closing may not have finished; the synchronous
+    // localStorage copy is then newer, so keep whichever copy was saved last.
+    const working = await loadWorkingCopy();
+    if (working && (working._autosavedAt || 0) >= (state._autosavedAt || 0)) state = working;
 
     renderForm();
     render();
@@ -901,14 +1003,9 @@
     });
     $('#coverInput').addEventListener('change', async e => {
       const f = e.target.files[0]; if (!f) return;
-      state.coverImage = await readImage(f, 2000, 0.88); e.target.value = ''; changed();
-    });
-    $('#logoInput').addEventListener('change', async e => {
-      const f = e.target.files[0]; if (!f) return;
-      state.logoImage = await readImage(f, 600, 0.92); e.target.value = ''; changed();
+      state.coverImage = await readImage(f, COVER_MAX_SIDE); e.target.value = ''; changed();
     });
     $('#coverReset').addEventListener('click', () => { state.coverImage = ''; changed(); });
-    $('#logoReset').addEventListener('click', () => { state.logoImage = ''; changed(); });
 
     $('#btnPdf').addEventListener('click', savePdf);
     $('#btnExport').addEventListener('click', () => downloadJSON());
@@ -940,7 +1037,7 @@
       if (confirmDiscard('เริ่มโครงการใหม่') && (state._dirty || confirm('เริ่มโครงการใหม่? (โครงการที่บันทึกไว้ยังอยู่ในรายการ "โครงการที่บันทึกไว้")'))) {
         const keep = sampleState(); const b = blankState();
         // keep the school details so a new project only needs project-specific data
-        ['school', 'schoolFull', 'office', 'obec', 'ministry', 'director', 'directorPosition', 'coverImage', 'logoImage']
+        ['school', 'schoolFull', 'office', 'obec', 'ministry', 'director', 'directorPosition', 'coverImage']
           .forEach(k => { b[k] = state[k] || keep[k]; });
         replaceState(b, 'เริ่มโครงการใหม่แล้ว');
       }

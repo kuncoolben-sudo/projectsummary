@@ -169,6 +169,7 @@
             <select data-bind="photosPerPage"><option value="1">1</option><option value="2">2</option><option value="4">4</option><option value="6">6</option></select>
           </label>
         </div>
+        <p class="hint">ใช้ไฟล์รูปต้นฉบับจากกล้องหรือมือถือ ระบบไม่ลดคุณภาพรูป (ย่อเฉพาะรูปที่ใหญ่กว่า 3000 px) ตัวเลขใต้รูปคือความละเอียดเมื่อพิมพ์ ควรได้ 300 dpi ขึ้นไป</p>
         <label class="btn small">+ เพิ่มรูปภาพ<input type="file" id="photoInput" accept="image/*" multiple hidden></label>
         <div class="photo-list" id="photoList"></div>
       </details>
@@ -180,10 +181,7 @@
             <input type="file" id="coverInput" accept="image/*">
           </label>
           <label>&nbsp;<button type="button" class="btn small" id="coverReset">ใช้ภาพพื้นหลังเริ่มต้น</button></label>
-          <label>ตราโรงเรียน (หน้าปกย่อย)
-            <input type="file" id="logoInput" accept="image/*">
-          </label>
-          <label>&nbsp;<button type="button" class="btn small" id="logoReset">ใช้ตราเริ่มต้น</button></label>
+          <p class="hint span2" id="coverDpi"></p>
         </div>
         <h4>เลือกหน้าที่จะพิมพ์</h4>
         <div class="checks wrap" id="sectionToggles"></div>
