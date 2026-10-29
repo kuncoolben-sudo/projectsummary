@@ -555,6 +555,12 @@
         figs.push(para(inlineImage(addMedia(im.bytes, im.ext), wMm, wMm * d.h / d.w), { align: 'center', keepNext: !!p.caption }) +
           (p.caption ? textPara(p.caption, { align: 'center' }, { sz: 14 }) : ''));
       }
+      // divider page: "ภาคผนวก" 48 pt in the middle of the page (text area starts 25 mm from the top)
+      // (an empty line of exact height pushes it down; space-before is dropped at the top of a page)
+      if (figs.length) {
+        body.push(`<w:p><w:pPr>${page() ? '<w:pageBreakBefore/>' : ''}<w:spacing w:before="0" w:after="0" w:line="${tw(148.5 - 25 - 11)}" w:lineRule="exact"/></w:pPr></w:p>`);
+        body.push(textPara('ภาคผนวก', { align: 'center' }, { b: true, sz: 48 }));
+      }
       for (let i = 0; i < figs.length; i += per) {
         body.push(H(s.appendixTitle, 18, { pageBreak: page(), after: 0 }));
         body.push(textPara(`${s.project} ${school2} ปีงบประมาณ ${s.year}`, { align: 'center', after: 6 }));
