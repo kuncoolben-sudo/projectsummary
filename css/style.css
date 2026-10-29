@@ -223,6 +223,13 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .pd-foot { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 10px 18px 14px; border-top: 1px solid var(--ui-border); }
 .pd-foot .hint { margin: 0; }
 .pd-actions { display: flex; gap: 6px; }
+.import-report { padding-bottom: 10px; font-size: 14px; }
+.import-report h3 { font-size: 15px; margin: 12px 0 4px; color: var(--accent); }
+.import-report ul { margin: 0; padding-left: 20px; }
+.import-report .warn { color: #b06000; }
+.import-report .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.import-report .chip { background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 1px 9px; font-size: 13px; }
+.import-report .chip.miss { background: #fde7e7; color: #b3261e; }
 
 .toast {
   position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);

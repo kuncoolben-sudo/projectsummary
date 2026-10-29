@@ -583,7 +583,7 @@
     const head = (num, title, note) => `<p class="t1 section"><span class="b">${num} ${title}</span>${note ? ` (${note})` : ''}</p>`;
     return `
       <div class="sheet prop">
-        <p><span class="b">โครงการ</span> ${esc(s.project)}</p>
+        <p><span class="b">โครงการ</span> ${esc(s.project.replace(/^โครงการ\s*/, ''))}</p>
         <p><span class="b">ลักษณะโครงการ</span>&nbsp;&nbsp; ${opt(s.projectType === 'continuing', 'โครงการต่อเนื่อง')}${opt(s.projectType === 'new', 'โครงการใหม่')}</p>
         <p><span class="b">กลุ่มงานรับผิดชอบ</span> ${esc(s.workGroup)}</p>
         <p><span class="b">สอดคล้องกับนโยบายและจุดเน้น สพฐ.</span> ${esc(s.policyFocus)}</p>
@@ -1134,8 +1134,62 @@
     });
   }
 
-  // Accepts either a backup of all projects or a single exported project.
+  // ---------------------------------------------------------------- Word import
+  // js/docx-import.js reads the school's proposal form / summary report (and this system's own
+  // exports) and returns the fields it recognised; they start a new, unsaved project.
+  const IMPORT_EXPECT = {
+    proposal: { project: 'ชื่อโครงการ', owner: 'ผู้รับผิดชอบโครงการ', objectives: 'วัตถุประสงค์', steps: 'กิจกรรม/ขั้นตอน',
+      planStart: 'ระยะเวลาดำเนินโครงการ', budgetItems: 'รายละเอียดการใช้งบประมาณ', indicators: 'ตัวชี้วัด' },
+    summary: { project: 'ชื่อโครงการ', year: 'ปีงบประมาณ', owner: 'ผู้รับผิดชอบโครงการ', objectives: 'วัตถุประสงค์', steps: 'ขั้นตอนการปฏิบัติงาน',
+      budgetPlan: 'งบประมาณตามแผน', budgetActual: 'งบประมาณที่ใช้จริง', indicators: 'ตัวชี้วัด', evalItems: 'แบบประเมินผลการปฏิบัติการ', satItems: 'แบบประเมินความพึงพอใจ' }
+  };
+  function importDocx(file) {
+    if (!confirmDiscard('นำเข้าไฟล์ Word')) return;
+    toast('กำลังอ่านไฟล์ Word…');
+    loadScript('js/docx-import.js')
+      .then(() => file.arrayBuffer())
+      .then(buf => window.ProjectDocxImport.parse(buf))
+      .then(res => {
+        if (!res.types.length) {
+          toast('ไม่พบรูปแบบแบบเสนอโครงการหรือรายงานสรุปโครงการในไฟล์นี้');
+          return;
+        }
+        const keep = {};
+        ['school', 'schoolFull', 'office', 'officeShort', 'obec', 'ministry', 'director', 'directorPosition',
+          'deputy', 'deputyPosition', 'policyFocus', 'coverImage'].forEach(k => { keep[k] = state[k]; });
+        const next = Object.assign(blankState(), keep, res.fields);
+        // a proposal imported while working on summaries is a project that is already running
+        next.stage = res.types.includes('summary') ? 'done' : (docMode === 'summary' ? 'running' : 'proposal');
+        next._dirty = true;
+        replaceState(next);
+        showImportReport(res, file.name);
+      })
+      .catch(err => {
+        console.error(err);
+        toast(err && err.message === 'no-decompression' ? 'เบราว์เซอร์นี้อ่านไฟล์ Word ไม่ได้ กรุณาใช้ Chrome, Edge, Firefox หรือ Safari รุ่นใหม่'
+          : 'อ่านไฟล์ไม่สำเร็จ — รองรับเฉพาะไฟล์ .docx (ถ้าเป็น .doc ให้เปิดใน Word แล้วบันทึกเป็น .docx)');
+      });
+  }
+  function showImportReport(res, name) {
+    const typeNames = res.types.map(t => DOCS[t]).join(' และ ');
+    const missing = [];
+    res.types.forEach(t => Object.entries(IMPORT_EXPECT[t]).forEach(([k, label]) => {
+      if (!(k in res.fields) && !missing.includes(label)) missing.push(label);
+    }));
+    $('#importReport').innerHTML = `
+      <p>ไฟล์ <b>${esc(name)}</b> เป็น<b>${typeNames}</b> สร้างเป็นโครงการใหม่ (ยังไม่ได้บันทึก) โดยคงข้อมูลโรงเรียนเดิมไว้</p>
+      <h3>นำเข้าแล้ว ${res.found.length} รายการ</h3>
+      <div class="chips">${res.found.map(f => `<span class="chip">${esc(f)}</span>`).join('')}</div>
+      ${missing.length ? `<h3>ไม่พบในไฟล์ (กรอกเพิ่มเองในแบบฟอร์ม)</h3><div class="chips">${missing.map(f => `<span class="chip miss">${esc(f)}</span>`).join('')}</div>` : ''}
+      ${res.warnings.length ? `<h3>ควรตรวจสอบ</h3><ul>${res.warnings.map(w => `<li class="warn">${esc(w)}</li>`).join('')}</ul>` : ''}`;
+    $('#toast').classList.remove('show');
+    $('#importDialog').showModal();
+  }
+
+  // Accepts a Word file, a backup of all projects or a single exported project.
   function importFile(file, { openSingle }) {
+    if (/\.docx$/i.test(file.name) || /wordprocessingml/.test(file.type)) { importDocx(file); return; }
+    if (/\.doc$/i.test(file.name)) { toast('รองรับเฉพาะไฟล์ .docx — เปิดไฟล์ใน Word แล้วบันทึกเป็น .docx ก่อน'); return; }
     const r = new FileReader();
     r.onload = () => {
       let data;
@@ -1292,6 +1346,9 @@
          export: i => dbGet(i).then(rec => rec && downloadJSON(rec.data)) })[btn.dataset.act](id);
     });
     $('#projectSearch').addEventListener('input', renderProjectList);
+    $('#importDialog').addEventListener('click', e => {
+      if (e.target === e.currentTarget || e.target.closest('[data-close]')) $('#importDialog').close();
+    });
     $('#btnBackup').addEventListener('click', backupAll);
     $('#backupImport').addEventListener('change', e => {
       const f = e.target.files[0]; if (f) importFile(f, { openSingle: false }); e.target.value = '';
