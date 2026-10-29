@@ -99,7 +99,7 @@
   const CHECK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
     '<path d="M18 52 L42 76 L84 22" fill="none" stroke="#000" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   let boxRids = null;
-  const box = on => inlineImage(boxRids[on ? 1 : 0].png, 3.1, 3.1, boxRids[on ? 1 : 0].svg);
+  const box = on => inlineImage(boxRids[on ? 1 : 0].png, 3.1, 3.1, boxRids[on ? 1 : 0].svg, on ? '☑' : '☐');
   const opt = (on, label) => box(on) + run(' ' + label + '      ');
 
   // o: align, before/after (pt), indent/firstLine (mm), border (dotted bottom), keepNext, pageBreak, tabs [{pos mm, val}]
@@ -171,10 +171,10 @@
       `<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>` +
       `</pic:pic></a:graphicData></a:graphic>`;
   }
-  function inlineImage(rid, wMm, hMm, svgRid) {
+  function inlineImage(rid, wMm, hMm, svgRid, descr) {
     const cx = Math.round(wMm * MM_EMU), cy = Math.round(hMm * MM_EMU), id = drawingId++;
     return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/>` +
-      `<wp:docPr id="${id}" name="Picture ${id}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>` +
+      `<wp:docPr id="${id}" name="Picture ${id}"${descr ? ` descr="${descr}"` : ''}/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>` +
       graphic(rid, cx, cy, svgRid) + '</wp:inline></w:drawing></w:r>';
   }
   // positioned on the page, behind the text (cover artwork)
@@ -272,7 +272,7 @@
       // ---- แบบเสนอโครงการ: indents follow the template (0.5 inch = 12.7 mm steps)
       const bt = budgetTotals(s), src = s.budgetSources, ns = s.natStrategy, em = s.evalMethods;
       const items = arr => arr.filter(t => String(t).trim());
-      const pk = on => run('(') + (on ? inlineImage(boxRids[2].png, 3.1, 3.1, boxRids[2].svg) : run('   ')) + run(')');
+      const pk = on => run('(') + (on ? inlineImage(boxRids[2].png, 3.1, 3.1, boxRids[2].svg, '✓') : run('   ')) + run(')');
       const amount = v => (+v > 0 ? money(v) : '................................');
       const dash = v => (v ? money(v) : '-');
       const val = v => ((v && String(v).trim()) ? v : '....................');
@@ -281,7 +281,7 @@
         Object.assign({ firstLine: 12.7, keepNext: true, before: 4 }, o));
       const L1 = { indent: 12.7, firstLine: 12.7 };
 
-      body.push(label('โครงการ', s.project));
+      body.push(label('โครงการ', s.project.replace(/^โครงการ\s*/, '')));
       body.push(para(run('ลักษณะโครงการ  ', B) + opt(s.projectType === 'continuing', 'โครงการต่อเนื่อง') + opt(s.projectType === 'new', 'โครงการใหม่')));
       body.push(label('กลุ่มงานรับผิดชอบ', s.workGroup));
       body.push(label('สอดคล้องกับนโยบายและจุดเน้น สพฐ.', s.policyFocus));

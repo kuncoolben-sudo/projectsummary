@@ -24,7 +24,7 @@
       <button type="button" id="btnNew" class="btn ghost">เริ่มโครงการใหม่</button>
       <button type="button" id="btnSample" class="btn ghost">โหลดตัวอย่าง</button>
       <button type="button" id="btnExport" class="btn ghost">ส่งออกข้อมูล (.json)</button>
-      <label class="btn ghost">นำเข้าข้อมูล<input type="file" id="fileImport" accept="application/json,.json" hidden></label>
+      <label class="btn ghost" title="นำเข้าแบบเสนอโครงการหรือรายงานสรุปโครงการจากไฟล์ Word หรือไฟล์ข้อมูล .json">นำเข้าไฟล์ (Word / JSON)<input type="file" id="fileImport" accept=".docx,.json,application/json,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden></label>
       <button type="button" id="btnDocx" class="btn word">บันทึกเป็น Word (.docx)</button>
       <button type="button" id="btnPdf" class="btn primary">บันทึกเป็น PDF</button>
     </div>
@@ -304,6 +304,18 @@
         <button type="button" class="btn small" id="btnBackup">ส่งออกทั้งหมด (สำรอง)</button>
         <label class="btn small">นำเข้าไฟล์<input type="file" id="backupImport" accept="application/json,.json" hidden></label>
       </div>
+    </div>
+  </dialog>
+
+  <dialog id="importDialog" class="projects-dialog no-print" aria-labelledby="importTitle">
+    <div class="pd-head">
+      <h2 id="importTitle">นำเข้าไฟล์ Word</h2>
+      <button type="button" class="pd-close" data-close aria-label="ปิด">✕</button>
+    </div>
+    <div class="pd-list import-report" id="importReport"></div>
+    <div class="pd-foot">
+      <span class="hint">ตรวจทานข้อมูลในแบบฟอร์มอีกครั้ง แล้วกด "บันทึกโครงการ" เพื่อเก็บไว้</span>
+      <div class="pd-actions"><button type="button" class="btn small" data-close>ตกลง</button></div>
     </div>
   </dialog>
 
