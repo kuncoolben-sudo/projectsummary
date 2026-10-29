@@ -51,6 +51,18 @@
       school: '', schoolFull: '', office: '',
       obec: 'สำนักงานคณะกรรมการการศึกษาขั้นพื้นฐาน', ministry: 'กระทรวงศึกษาธิการ',
       director: '', directorPosition: '',
+      officeShort: '', deputy: '', deputyPosition: '',
+      stage: 'proposal',
+      // แบบเสนอโครงการ
+      policyFocus: '', natStrategy: { hr: false, admin: false, other: '' },
+      obecStrategy: '', std1: '', std2: '', std3: '', areaStrategy: '', schoolStrategy: '',
+      rationale: '', targetQuantity: '', targetQuality: '',
+      budgetItems: [{ text: '', comp: 0, use: 0, mat: 0 }],
+      budgetSources: { teaching: 0, activity: 0, income: 0, other: 0, otherName: '' },
+      kpiQuality: [''], beneficiaries: [''],
+      evalMethods: { survey: true, form: true, other: '' },
+      expectedResults: '',
+      // รายงานสรุปโครงการ
       preface: DEFAULT_PREFACE,
       memoNo: '', memoDate: '', memoProblems: '-', memoSuggestions: '-',
       objectives: [''],
@@ -100,6 +112,9 @@
       school: 'โรงเรียนวัดปรีดาราม', schoolFull: 'โรงเรียนวัดปรีดาราม (มณีศิริวรรณ)',
       office: 'สำนักงานเขตพื้นที่การศึกษาประถมศึกษานครปฐม เขต 2',
       director: 'นางสาวธิญดา  โชติรุจิธนกุล', directorPosition: 'ผู้อำนวยการโรงเรียนวัดปรีดาราม',
+      officeShort: 'สพป.นครปฐม เขต 2', stage: 'done',
+      deputy: 'นางสาวรัตนา  ธนธนานนท์', deputyPosition: 'รองผู้อำนวยการโรงเรียนวัดปรีดาราม',
+      policyFocus: 'ส่งเสริมสนับสนุนกิจกรรมพัฒนาผู้เรียน',
       memoNo: '     /2568', memoDate: '30 กันยายน พ.ศ. 2568',
       objectives: [
         'เพื่อส่งเสริมให้ลูกเสือ-เนตรนารี ได้รับความรู้ในวิชาลูกเสือ-เนตรนารี และสามารถนำประสบการณ์ที่ได้เรียนไปใช้ในชีวิตประจำวัน',
@@ -143,6 +158,47 @@
     });
   }
 
+  // Sample proposal: the school's own proposal template (fiscal year 2569).
+  function sampleProposal() {
+    const base = sampleState();
+    const keep = ['school', 'schoolFull', 'office', 'officeShort', 'obec', 'ministry', 'director', 'directorPosition',
+      'deputy', 'deputyPosition', 'owner', 'ownerPosition', 'project', 'workGroup', 'projectType', 'policyFocus', 'objectives', 'indicators'];
+    const owner = 'นายเบญจรงค์ นุ่มวัฒนะ';
+    return Object.assign(blankState(), Object.fromEntries(keep.map(k => [k, base[k]])), {
+      year: '2569', stage: 'proposal',
+      natStrategy: { hr: true, admin: false, other: '' },
+      obecStrategy: 'กลยุทธ์ที่ 3 ยกระดับคุณภาพการศึกษาให้สอดคล้องกับการเปลี่ยนแปลงในศตวรรษที่ 21',
+      std1: '1.1.2 , 1.2.1', std2: '2.3', std3: '3.1',
+      areaStrategy: '2 พัฒนาขีดความสามารถของผู้เรียนเพื่อการแข่งขันสู่ความเป็นเลิศ',
+      schoolStrategy: '2 จัดการศึกษาเพื่อเพิ่มความสามารถของผู้เรียนเพื่อการแข่งขันสู่ความเป็นเลิศ',
+      rationale: 'กิจกรรมลูกเสือและเนตรนารีเป็นกิจกรรมที่บรรจุอยู่ในหลักสูตรสถานศึกษา ซึ่งเป็นกิจกรรมพัฒนาผู้เรียนที่มุ่งเน้นให้เด็กมีความรักชาติ มีระเบียบวินัย มีความสามัคคี การดำรงชีพในคราวจำเป็นและการปฏิบัติตนให้เป็นประโยชน์ต่อสังคม ดังนั้นการอยู่ค่ายพักแรมจึงถือว่าเป็นหัวใจสำคัญของกิจกรรมลูกเสือในการที่จะสรุปพฤติกรรมต่างๆที่ได้รับการศึกษาในช่วงระยะปีการศึกษาว่ามีพฤติกรรมอันพึงประสงค์มากน้อยเพียงใด\n\n' +
+        'ดังนั้นงานบริหารทั่วไปได้เล็งเห็นความสำคัญของการเข้าค่ายพักแรมจึงกำหนดให้มีการเข้าค่ายพักแรมของลูกเสือและเนตรนารีสามัญของโรงเรียนวัดปรีดารามขึ้นในประมาณเดือนธันวาคม 2568 หรือเดือน มกราคม 2569',
+      targetQuantity: 'ลูกเสือและเนตรนารีชั้นประถมศึกษาปีที่ 1 - 6 เข้าค่ายพักแรมปีละ 1 ครั้ง',
+      targetQuality: 'ลูกเสือและเนตรนารีชั้นประถมศึกษาปีที่ 1 - 6 สามารถสอบผ่านหลักสูตรร้อยละ 100',
+      steps: [
+        { activity: 'เสนอโครงการเพื่ออนุมัติ', period: 'ต.ค. 68', owner },
+        { activity: 'ประชุมผู้กำกับ รองผู้กำกับ', period: 'ต.ค. 68', owner },
+        { activity: 'แต่งตั้งคณะกรรมการดำเนินงาน', period: 'ต.ค. 68', owner: 'ผู้อำนวยการ' },
+        { activity: 'ประสานงานกับครูลูกเสือในกลุ่ม', period: 'พ.ย. 68', owner },
+        { activity: 'ดำเนินงานตามโครงการ', period: 'ธ.ค. 68 – ม.ค. 69', owner: 'คณะกรรมการ' },
+        { activity: 'ติดตามผลและประเมินผล', period: 'มี.ค. 69', owner },
+        { activity: 'สรุปผลและรายงานผลตามโครงการ', period: 'มี.ค. 69', owner }
+      ],
+      planStart: 'ตุลาคม 2568', planEnd: 'กันยายน 2569',
+      budgetItems: [
+        { text: 'จัดทำเอกสารการเข้าค่ายพักแรมลูกเสือ – เนตรนารี สามัญ', comp: 0, use: 0, mat: 3000 },
+        { text: 'การเข้าค่ายพักแรมลูกเสือ – เนตรนารี สามัญ', comp: 0, use: 0, mat: 68355 },
+        { text: 'รายงานสรุปผลการจัดกิจกรรม', comp: 0, use: 0, mat: 0 }
+      ],
+      budgetPlan: 70355,
+      budgetSources: { teaching: 0, activity: 70355, income: 0, other: 0, otherName: '' },
+      kpiQuality: ['ลูกเสือและเนตรนารีชั้นประถมศึกษาปีที่ 1 - 6 สามารถสอบผ่านหลักสูตร ร้อยละ 100'],
+      beneficiaries: ['นักเรียนโรงเรียนวัดปรีดาราม'],
+      evalMethods: { survey: true, form: true, other: '' },
+      expectedResults: 'ลูกเสือและเนตรนารีได้รับประสบการณ์ตรงจากการอยู่ร่วมกัน และได้นำประสบการณ์จากที่ได้เรียนไปใช้ในชีวิตประจำวัน'
+    });
+  }
+
   // ---------------------------------------------------------------- state
   let state = load() || sampleState();
 
@@ -160,9 +216,15 @@
     const out = Object.assign(base, data || {});
     out.evaluators = Object.assign(blankState().evaluators, out.evaluators || {});
     out.sections = Object.assign(blankState().sections, out.sections || {});
+    ['natStrategy', 'budgetSources', 'evalMethods'].forEach(k => { out[k] = Object.assign(blankState()[k], out[k] || {}); });
     delete out.logoImage; // sub-cover logo was removed; drop it from older saved data
-    ['objectives', 'participants', 'indicators', 'followSteps', 'followResults', 'steps', 'evalItems', 'satItems', 'photos']
-      .forEach(k => { if (!Array.isArray(out[k])) out[k] = base[k]; });
+    // projects saved before the proposal form existed were summary reports
+    if (!data || !data.stage) out.stage = 'done';
+    ['objectives', 'participants', 'indicators', 'followSteps', 'followResults', 'steps', 'evalItems', 'satItems', 'photos',
+      'budgetItems', 'kpiQuality', 'beneficiaries']
+      .forEach(k => { if (!Array.isArray(out[k])) out[k] = blankState()[k]; });
+    out.budgetItems = out.budgetItems.map(it => ({ text: it.text || '', comp: toNum(it.comp), use: toNum(it.use), mat: toNum(it.mat) }));
+    ['teaching', 'activity', 'income', 'other'].forEach(k => { out.budgetSources[k] = toNum(out.budgetSources[k]); });
     ['evalItems', 'satItems'].forEach(k => {
       out[k] = out[k].map(it => ({ text: it.text || '', c: LEVELS.map((_, i) => toNum(it.c && it.c[i])) }));
     });
@@ -255,7 +317,7 @@
   }
 
   // ---------------------------------------------------------------- document rendering
-  function render() {
+  function renderSummary() {
     const s = state;
     const ev = ratingSummary(s.evalItems);
     const sat = ratingSummary(s.satItems);
@@ -499,14 +561,118 @@
       }
     }
 
-    $('#doc').innerHTML = pages.join('') || '<div class="sheet"><p class="center">ยังไม่ได้เลือกหน้าที่จะแสดง</p></div>';
+    return pages.join('') || '<div class="sheet"><p class="center">ยังไม่ได้เลือกหน้าที่จะแสดง</p></div>';
+  }
+
+  // Totals of the proposal's budget table (2.7); its grand total is also the summary's planned budget.
+  function budgetTotals(s) {
+    const rows = s.budgetItems.map(it => Object.assign({}, it, { total: toNum(it.comp) + toNum(it.use) + toNum(it.mat) }));
+    const sum = k => rows.reduce((a, r) => a + toNum(r[k]), 0);
+    return { rows, comp: sum('comp'), use: sum('use'), mat: sum('mat'), total: sum('total') };
+  }
+  const proposalBudget = s => budgetTotals(s).total || toNum(s.budgetPlan);
+
+  // แบบเสนอโครงการ — one flowing document laid out like the school's template
+  function renderProposal() {
+    const s = state, bt = budgetTotals(s), src = s.budgetSources, ns = s.natStrategy, em = s.evalMethods;
+    const pk = on => `(<span class="ck${on ? ' on' : ''}"></span>)`;
+    const val = (v, w = '10em') => blank(v, w);
+    const items = arr => arr.filter(t => String(t).trim());
+    const amount = v => (toNum(v) > 0 ? money(v) : '................................');
+    const dash = v => (v ? money(v) : '-');
+    const head = (num, title, note) => `<p class="t1 section"><span class="b">${num} ${title}</span>${note ? ` (${note})` : ''}</p>`;
+    return `
+      <div class="sheet prop">
+        <p><span class="b">โครงการ</span> ${esc(s.project)}</p>
+        <p><span class="b">ลักษณะโครงการ</span>&nbsp;&nbsp; ${opt(s.projectType === 'continuing', 'โครงการต่อเนื่อง')}${opt(s.projectType === 'new', 'โครงการใหม่')}</p>
+        <p><span class="b">กลุ่มงานรับผิดชอบ</span> ${esc(s.workGroup)}</p>
+        <p><span class="b">สอดคล้องกับนโยบายและจุดเน้น สพฐ.</span> ${esc(s.policyFocus)}</p>
+        <p><span class="b">ผู้รับผิดชอบโครงการ</span> ${esc(s.owner)}</p>
+
+        <p class="b section">1. ความสอดคล้อง</p>
+        <div class="choice"><span>1.1 ยุทธศาสตร์ชาติ 20 ปี (Z)</span><span class="opts">
+          <span>${pk(ns.hr)} ด้านการพัฒนาและเสริมสร้างศักยภาพทรัพยากรมนุษย์</span>
+          <span>${pk(ns.admin)} ด้านการปรับสมดุลและพัฒนาระบบบริหารจัดการภาครัฐ</span>
+          <span>${pk(!!ns.other.trim())} อื่น ๆ (ระบุ) ${ns.other.trim() ? esc(ns.other) : '......................................................'}</span>
+        </span></div>
+        <p class="t1">1.2 กลยุทธ์ สพฐ. (X) กลยุทธ์ที่ (ระบุ) ${val(s.obecStrategy)}</p>
+        <p class="t1">1.3 มาตรฐานการศึกษา</p>
+        <p class="i1 t1">1.3.1 คุณภาพผู้เรียน มาตรฐานที่ 1 ตัวบ่งชี้ที่ ${val(s.std1, '5em')}</p>
+        <p class="i1 t1">1.3.2 กระบวนการบริหารและการจัดการ มาตรฐานที่ 2 ตัวบ่งชี้ที่ ${val(s.std2, '5em')}</p>
+        <p class="i1 t1">1.3.3 กระบวนการจัดการเรียนการสอน มาตรฐานที่ 3 ตัวบ่งชี้ที่ ${val(s.std3, '5em')}</p>
+        <p class="t1">1.4 กลยุทธ์ ${esc(or(s.officeShort, 'สพป.'))} (X) กลยุทธ์ที่ (ระบุ) ${val(s.areaStrategy)}</p>
+        <p class="t1">1.5 กลยุทธ์โรงเรียน (X) กลยุทธ์ที่ (ระบุ) ${val(s.schoolStrategy)}</p>
+        <p class="t1">1.6 นโยบายและจุดเน้น สพฐ. ${val(s.policyFocus)}</p>
+
+        <p class="b section">2. รายละเอียดโครงการ (X)</p>
+        ${head('2.1', 'หลักการและเหตุผล', 'แสดงปัญหา เหตุผล ความจำเป็นต้องมีโครงการ และผลประโยชน์ที่จะได้รับจากการดำเนินงานตามโครงการ')}
+        ${paras(s.rationale, 'i1 t1 justify')}
+        ${head('2.2', 'วัตถุประสงค์', 'แสดงความต้องการว่าจะให้เกิดอะไรขึ้น ต้องชัดเจน ปฏิบัติได้ วัดได้ ประเมินได้')}
+        ${items(s.objectives).map((o, i) => `<p class="i1 t1">${i + 1}. ${esc(o)}</p>`).join('')}
+        ${head('2.3', 'เป้าหมาย', 'ต้องสอดคล้องกับวัตถุประสงค์')}
+        <p class="i1 t1">1) เชิงปริมาณ (ผลผลิต) (ระบุจำนวน ปริมาณของผลงานที่เกิดขึ้นหลังจากดำเนินการเสร็จ)</p>
+        ${paras(s.targetQuantity, 'i1 t2 pre')}
+        <p class="i1 t1">2) เชิงคุณภาพ (ผลลัพธ์) (ระบุผลประโยชน์ที่เกิดขึ้นหลังจากดำเนินการเสร็จ)</p>
+        ${paras(s.targetQuality, 'i1 t2 pre')}
+        ${head('2.4', 'กิจกรรมและวิธีดำเนินงาน')}
+        <table class="t">
+          <thead><tr><th style="width:8%">ที่</th><th>รายละเอียด/กิจกรรม</th><th style="width:22%">ระยะเวลา</th><th style="width:28%">ผู้รับผิดชอบ</th></tr></thead>
+          <tbody>${s.steps.map((st, i) => `<tr><td class="c">${i + 1}.</td><td>${esc(st.activity)}</td><td class="c">${esc(st.period)}</td><td>${esc(st.owner)}</td></tr>`).join('')}</tbody>
+        </table>
+        <p class="t1 section"><span class="b">2.5 ระยะเวลาดำเนินโครงการ</span> ${val(s.planStart, '6em')} – ${val(s.planEnd, '6em')}</p>
+        <p class="t1 section"><span class="b">2.6 งบประมาณ</span> ${money(proposalBudget(s))} บาท</p>
+        <p class="i1 t1">${pk(src.teaching > 0)} เงินอุดหนุน (ค่าจัดการเรียนการสอน) จำนวน ${amount(src.teaching)} บาท</p>
+        <p class="i1 t1">${pk(src.activity > 0)} เงินอุดหนุน (กิจกรรมพัฒนาผู้เรียน) จำนวน ${amount(src.activity)} บาท</p>
+        <p class="i1 t1">${pk(src.income > 0)} เงินรายได้สถานศึกษา จำนวน ${amount(src.income)} บาท</p>
+        <p class="i1 t1">${pk(src.other > 0)} อื่น ๆ (ระบุ) ${esc(src.otherName) || '........................................'} จำนวน ${amount(src.other)} บาท</p>
+        ${head('2.7', 'รายละเอียดการใช้งบประมาณ', 'ขอถัวจ่ายทุกรายการ')}
+        <table class="t budget">
+          <thead>
+            <tr><th rowspan="3" style="width:32%">กิจกรรมและรายละเอียด<br>การใช้งบประมาณ</th><th colspan="3">งบประมาณจำแนกตามรายการ</th><th rowspan="3" style="width:20%">รวม<br>งบประมาณ</th></tr>
+            <tr><th colspan="3">งบดำเนินงาน</th></tr>
+            <tr><th>ตอบแทน</th><th>ใช้สอย</th><th>วัสดุ</th></tr>
+          </thead>
+          <tbody>${bt.rows.filter(r => r.text.trim() || r.total).map((r, i) => `<tr><td>${i + 1}. ${esc(r.text)}</td><td class="c">${dash(r.comp)}</td><td class="c">${dash(r.use)}</td><td class="c">${dash(r.mat)}</td><td class="c">${dash(r.total)}</td></tr>`).join('')}</tbody>
+          <tfoot><tr><td style="text-align:center">รวมทั้งสิ้น</td><td class="c">${dash(bt.comp)}</td><td class="c">${dash(bt.use)}</td><td class="c">${dash(bt.mat)}</td><td class="c">${dash(bt.total)}</td></tr></tfoot>
+        </table>
+        ${head('2.8', 'ดัชนีชี้วัดความสำเร็จ (KPIs)')}
+        <p class="t20"><span class="b">2.8.1 ตัวชี้วัดเชิงปริมาณ</span> (ความสำเร็จตามวัตถุประสงค์ของโครงการที่สามารถวัดได้เชิงตัวเลข)</p>
+        ${items(s.indicators).map((t, i) => `<p class="t3">${i + 1}) ${esc(t)}</p>`).join('')}
+        <p class="t20"><span class="b">2.8.2 ตัวชี้วัดเชิงคุณภาพ</span> (การวัดความสำเร็จตามวัตถุประสงค์ของโครงการว่ามีคุณภาพอย่างไร เช่น คุณภาพชีวิต ความพึงพอใจของผู้รับบริการ การเปลี่ยนแปลงพฤติกรรม)</p>
+        ${items(s.kpiQuality).map((t, i) => `<p class="t3">${i + 1}) ${esc(t)}</p>`).join('')}
+        ${head('2.9', 'กลุ่มเป้าหมายผู้ได้รับผลประโยชน์')}
+        ${items(s.beneficiaries).map((t, i) => `<p class="t20">2.9.${i + 1} ${esc(t)}</p>`).join('')}
+        ${head('2.10', 'การประเมินผลโครงการ')}
+        <p class="i1 t1">${pk(em.survey)} แบบสอบถาม</p>
+        <p class="i1 t1">${pk(em.form)} แบบประเมิน</p>
+        <p class="i1 t1">${pk(!!em.other.trim())} อื่น ๆ (ระบุ) ${em.other.trim() ? esc(em.other) : '........................................................'}</p>
+        ${head('2.11', 'ผลที่คาดว่าจะได้รับ')}
+        ${paras(s.expectedResults, 'i1 t1 justify')}
+
+        <div class="sign keep">
+          <div class="s">ลงชื่อ...................................................ผู้เสนอโครงการ<br>( ${esc(s.owner)} )<br>${esc(s.ownerPosition)}${esc(s.school)}</div>
+          ${s.deputy.trim() ? `<div class="s">ลงชื่อ...................................................ผู้อนุมัติโครงการ<br>( ${esc(s.deputy)} )<br>${esc(s.deputyPosition)}</div>` : ''}
+          <div class="s">ลงชื่อ...................................................ผู้อนุมัติโครงการ<br>( ${esc(s.director)} )<br>${esc(s.directorPosition)}</div>
+        </div>
+      </div>`;
+  }
+
+  function render() {
+    const s = state;
+    $('#doc').innerHTML = docMode === 'proposal' ? renderProposal() : renderSummary();
+    const ev = ratingSummary(s.evalItems), sat = ratingSummary(s.satItems);
 
     // summaries in the form
     $('#evalResult').textContent = `ผลสำเร็จ ร้อยละ ${fmt2(ev.total)} (ผู้ประเมิน ${ev.respondents} คน)`;
     $('#satResult').textContent = `ความพึงพอใจ ร้อยละ ${fmt2(sat.total)} — ${satLevel(sat.total).text} / ระดับคุณภาพ${qualityLevel(sat.total)}`;
     const diff = toNum(s.budgetPlan) - toNum(s.budgetActual);
-    $('#budgetHint').textContent = diff === 0 ? 'ใช้งบประมาณตามแผน'
-      : diff > 0 ? `ต่ำกว่าแผน ${money(diff)} บาท` : `สูงกว่าแผน ${money(-diff)} บาท`;
+    $('#budgetHint').textContent = (diff === 0 ? 'ใช้งบประมาณตามแผน'
+      : diff > 0 ? `ต่ำกว่าแผน ${money(diff)} บาท` : `สูงกว่าแผน ${money(-diff)} บาท`) +
+      (budgetTotals(s).total > 0 ? ' (งบตามแผนมาจากรายละเอียดงบประมาณในแบบเสนอโครงการ)' : '');
+    const bt = budgetTotals(s).total, srcSum = ['teaching', 'activity', 'income', 'other'].reduce((a, k) => a + toNum(s.budgetSources[k]), 0);
+    $('#sourcesHint').textContent = !bt && !srcSum ? ''
+      : srcSum === bt ? `แหล่งงบประมาณรวม ${money(srcSum)} บาท ตรงกับยอดรวมรายละเอียดงบประมาณ`
+      : `⚠ แหล่งงบประมาณรวม ${money(srcSum)} บาท ไม่เท่ากับยอดรวมรายละเอียดงบประมาณ ${money(bt)} บาท`;
     updateDpiInfo();
   }
 
@@ -629,7 +795,7 @@
 
   // Every bitmap that will be printed, with its effective dpi.
   function printedImages() {
-    const s = state, on = k => s.sections[k] !== false, items = [];
+    const s = state, on = k => docMode === 'summary' && s.sections[k] !== false, items = [];
     if (on('cover')) {
       if (s.coverImage) {
         items.push(getDims(s.coverImage).then(d => d && {
@@ -720,6 +886,41 @@
     });
   }
 
+  // Budget table editor (proposal 2.7); sums update in place so typing keeps focus.
+  function renderBudget() {
+    const bt = budgetTotals(state);
+    const cell = k => `<td class="sum" data-sum="${k}"></td>`;
+    $('#budgetEditor').innerHTML = `<table><thead><tr><th>ที่</th><th>กิจกรรมและรายละเอียด</th><th>ตอบแทน</th><th>ใช้สอย</th><th>วัสดุ</th><th>รวม</th><th></th></tr></thead><tbody>` +
+      bt.rows.map((it, i) => `<tr data-i="${i}"><td>${i + 1}</td><td class="item"><input data-f="text" value="${esc(it.text)}"></td>` +
+        ['comp', 'use', 'mat'].map(k => `<td><input type="number" min="0" step="any" inputmode="decimal" data-f="${k}" value="${it[k] || ''}"></td>`).join('') +
+        `<td class="sum" data-row-sum="${i}"></td><td><button type="button" data-act="del" title="ลบ">✕</button></td></tr>`).join('') +
+      `</tbody><tfoot><tr><td></td><th>รวมทั้งสิ้น</th>${cell('comp')}${cell('use')}${cell('mat')}${cell('total')}<td></td></tr></tfoot></table>`;
+    updateBudgetSums();
+  }
+  function updateBudgetSums() {
+    const bt = budgetTotals(state);
+    $$('#budgetEditor [data-row-sum]').forEach(td => { td.textContent = money(bt.rows[+td.dataset.rowSum].total); });
+    $$('#budgetEditor [data-sum]').forEach(td => { td.textContent = money(bt[td.dataset.sum]); });
+  }
+  function onBudgetEvent(e) {
+    const tr = e.target.closest('tr[data-i]'); if (!tr) return;
+    const i = +tr.dataset.i, f = e.target.dataset.f;
+    if (e.type === 'input' && f) {
+      state.budgetItems[i][f] = f === 'text' ? e.target.value : toNum(e.target.value);
+      updateBudgetSums(); syncBudgetPlan(); changed();
+    } else if (e.type === 'click' && e.target.dataset.act === 'del') {
+      state.budgetItems.splice(i, 1); renderBudget(); syncBudgetPlan(); changed();
+    }
+  }
+  // The summary's planned budget follows the proposal's budget table once that has amounts.
+  function syncBudgetPlan() {
+    const t = budgetTotals(state).total, inp = $('[data-bind="budgetPlan"]');
+    if (t > 0) state.budgetPlan = t;
+    inp.disabled = t > 0;
+    inp.value = state.budgetPlan;
+    inp.title = t > 0 ? 'คำนวณจากรายละเอียดการใช้งบประมาณในแบบเสนอโครงการ' : '';
+  }
+
   function renderSectionToggles() {
     $('#sectionToggles').innerHTML = SECTIONS.map(([k, label]) =>
       `<label><input type="checkbox" data-bind="sections.${k}" ${state.sections[k] !== false ? 'checked' : ''}> ${label}</label>`).join('');
@@ -732,6 +933,8 @@
     renderSteps();
     renderRatings();
     renderPhotos();
+    renderBudget();
+    syncBudgetPlan();
   }
 
   function toast(msg) {
@@ -784,9 +987,9 @@
     btn.disabled = true;
     toast('กำลังสร้างไฟล์ Word…');
     Promise.all([loadScript('js/docx-assets.js'), loadScript('js/docx-export.js')])
-      .then(() => window.ProjectDocx.build({ state, ratingSummary, qualityLevel, satLevel, fill, fmt, fmt2, money, or, LEVELS, getDims, printedWidth, PHOTO_BOX }))
+      .then(() => window.ProjectDocx.build({ doc: docMode, state, ratingSummary, qualityLevel, satLevel, fill, fmt, fmt2, money, or, LEVELS, getDims, printedWidth, PHOTO_BOX, budgetTotals, proposalBudget }))
       .then(({ blob, skipped }) => {
-        downloadBlob(blob, yearSlug(state), 'docx');
+        downloadBlob(blob, docMode === 'proposal' ? yearSlug(state).replace('summary', 'proposal') : yearSlug(state), 'docx');
         toast(skipped ? `บันทึกไฟล์ Word แล้ว (ข้ามรูป ${skipped} รูปที่เบราว์เซอร์อ่านไฟล์ไม่ได้ — ลองเพิ่มรูปใหม่ผ่านปุ่ม "เพิ่มรูปภาพ")` : 'บันทึกไฟล์ Word แล้ว');
       })
       .catch(err => { console.error(err); toast('สร้างไฟล์ Word ไม่สำเร็จ'); })
@@ -833,7 +1036,7 @@
     return {
       id, data, updatedAt: Date.now(),
       name: (data.project || '').trim() || 'โครงการไม่มีชื่อ',
-      year: data.year || '', owner: data.owner || ''
+      year: data.year || '', owner: data.owner || '', stage: data.stage || 'done'
     };
   }
 
@@ -858,6 +1061,7 @@
     dbGet(id).then(rec => {
       if (!rec) return toast('ไม่พบโครงการนี้');
       replaceState(Object.assign({}, rec.data, { _id: rec.id, _dirty: false, _savedAt: rec.updatedAt }), `เปิดโครงการ "${rec.name}" แล้ว`);
+      setDoc(docForStage(state.stage));
       $('#projectsDialog').close();
     });
   }
@@ -881,6 +1085,10 @@
     });
   }
 
+  const STAGES = { proposal: 'เสนอโครงการ', running: 'กำลังดำเนินการ', done: 'สรุปผลแล้ว' };
+  // a project still being proposed opens on the proposal, later stages on the summary report
+  const docForStage = st => (st === 'proposal' ? 'proposal' : 'summary');
+
   function fmtDate(t) {
     return new Date(t).toLocaleString('th-TH', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
@@ -890,7 +1098,8 @@
     dbAll().then(list => {
       const q = $('#projectSearch').value.trim().toLowerCase();
       list.sort((a, b) => b.updatedAt - a.updatedAt);
-      const shown = list.filter(r => !q || `${r.name} ${r.owner} ${r.year}`.toLowerCase().includes(q));
+      const stageOf = r => STAGES[(r.data && r.data.stage) || r.stage] || STAGES.done;
+      const shown = list.filter(r => !q || `${r.name} ${r.owner} ${r.year} ${stageOf(r)}`.toLowerCase().includes(q));
       if (!shown.length) {
         box.innerHTML = `<p class="pd-empty">${list.length ? 'ไม่พบโครงการที่ค้นหา' : 'ยังไม่มีโครงการที่บันทึกไว้<br>กรอกข้อมูลแล้วกด "บันทึกโครงการ" ที่แถบด้านบน'}</p>`;
         return;
@@ -899,7 +1108,7 @@
         <div class="pd-item${r.id === state._id ? ' current' : ''}" data-id="${esc(r.id)}">
           <div class="info">
             <div class="name">${esc(r.name)}${r.id === state._id ? '<span class="badge">กำลังเปิด</span>' : ''}</div>
-            <div class="meta">ปีงบประมาณ ${esc(r.year || '-')} · ${esc(r.owner || '-')} · บันทึกล่าสุด ${fmtDate(r.updatedAt)}</div>
+            <div class="meta"><span class="stage stage-${esc((r.data && r.data.stage) || r.stage || 'done')}">${stageOf(r)}</span> ปีงบประมาณ ${esc(r.year || '-')} · ${esc(r.owner || '-')} · บันทึกล่าสุด ${fmtDate(r.updatedAt)}</div>
           </div>
           <div class="acts">
             <button type="button" class="btn small" data-act="open">เปิด/แก้ไข</button>
@@ -965,7 +1174,7 @@
         `\n\nข้อความ เส้นตาราง และลวดลายหน้าปกใน PDF เป็นเวกเตอร์ คมชัดทุกความละเอียดอยู่แล้ว` +
         `\nรูปจะคมชัดเท่าไฟล์ต้นฉบับเท่านั้น (ระบบไม่ลดความละเอียดรูป)\n\nบันทึก PDF ต่อหรือไม่?`)) return;
     const prevTitle = document.title;
-    document.title = `สรุปโครงการ ${state.project || ''} ปีงบประมาณ ${state.year}`.trim();
+    document.title = `${docMode === 'proposal' ? 'แบบเสนอโครงการ' : 'สรุปโครงการ'} ${state.project || ''} ปีงบประมาณ ${state.year}`.trim();
     // Wait for images so nothing is missing from the PDF.
     const imgs = $$('#doc img');
     Promise.all(imgs.map(img => img.complete ? null : new Promise(r => { img.onload = img.onerror = r; })))
@@ -982,8 +1191,29 @@
     if (msg) toast(msg);
   }
 
+  // ---------------------------------------------------------------- document switch
+  const DOCS = { proposal: 'แบบเสนอโครงการ', summary: 'รายงานสรุปโครงการ' };
+  let docMode = 'summary';
+  function saveUi() {
+    try { localStorage.setItem(UI_KEY, JSON.stringify({ view: document.body.dataset.view, doc: docMode })); } catch (e) { /* ignore */ }
+  }
+  function setDoc(mode) {
+    docMode = DOCS[mode] ? mode : 'summary';
+    document.body.dataset.doc = docMode;
+    $$('[data-doc-btn]').forEach(b => {
+      const on = b.dataset.docBtn === docMode;
+      b.classList.toggle('active', on); b.setAttribute('aria-selected', String(on));
+    });
+    $('#docLabel').textContent = DOCS[docMode];
+    saveUi();
+    render();
+  }
+
   async function init() {
-    try { const ui = JSON.parse(localStorage.getItem(UI_KEY) || '{}'); if (ui.view) document.body.dataset.view = ui.view; } catch (e) { /* ignore */ }
+    let ui = {};
+    try { ui = JSON.parse(localStorage.getItem(UI_KEY) || '{}'); if (ui.view) document.body.dataset.view = ui.view; } catch (e) { /* ignore */ }
+    docMode = DOCS[ui.doc] ? ui.doc : 'summary';
+    document.body.dataset.doc = docMode;
     if (!document.body.dataset.view) document.body.dataset.view = 'form';
     $$('.mobile-switch button').forEach(b => b.classList.toggle('active', b.dataset.view === document.body.dataset.view));
 
@@ -993,8 +1223,9 @@
     if (working && (working._autosavedAt || 0) >= (state._autosavedAt || 0)) state = working;
 
     renderForm();
-    render();
+    setDoc(docMode);
     updateProjectStatus();
+    $$('[data-doc-btn]').forEach(b => b.addEventListener('click', () => setDoc(b.dataset.docBtn)));
 
     const editor = $('#editor');
     editor.addEventListener('input', e => {
@@ -1002,6 +1233,7 @@
       if (e.target.closest('#stepsEditor')) return onStepsEvent(e);
       if (e.target.closest('[data-rating]')) return onRatingEvent(e);
       if (e.target.closest('#photoList')) return onPhotoEvent(e);
+      if (e.target.closest('#budgetEditor')) return onBudgetEvent(e);
       onFieldInput(e);
     });
     editor.addEventListener('change', e => { if (e.target.matches('select, input[type=checkbox]')) onFieldInput(e); });
@@ -1010,10 +1242,15 @@
       if (e.target.closest('#stepsEditor')) return onStepsEvent(e);
       if (e.target.closest('[data-rating]')) return onRatingEvent(e);
       if (e.target.closest('#photoList')) return onPhotoEvent(e);
+      if (e.target.closest('#budgetEditor')) return onBudgetEvent(e);
       const add = e.target.closest('[data-add-rating]');
       if (add) { state[add.dataset.addRating].push({ text: '', c: [0, 0, 0, 0, 0] }); renderRatings(); changed(); }
     });
 
+    $('#addBudgetItem').addEventListener('click', () => {
+      state.budgetItems.push({ text: '', comp: 0, use: 0, mat: 0 }); renderBudget(); changed();
+      focusLast($('#budgetEditor'), 'input[data-f=text]');
+    });
     $('#addStep').addEventListener('click', () => {
       state.steps.push({ activity: '', period: '', owner: state.owner || '' }); renderSteps(); changed();
       focusLast($('#stepsEditor'), 'input[data-f=activity]');
@@ -1060,15 +1297,19 @@
       const f = e.target.files[0]; if (f) importFile(f, { openSingle: false }); e.target.value = '';
     });
     $('#btnSample').addEventListener('click', () => {
-      if (confirmDiscard('โหลดข้อมูลตัวอย่าง') && (state._dirty || confirm('แทนที่ข้อมูลที่เปิดอยู่ด้วยข้อมูลตัวอย่าง?'))) replaceState(sampleState(), 'โหลดข้อมูลตัวอย่างแล้ว');
+      if (confirmDiscard('โหลดข้อมูลตัวอย่าง') && (state._dirty || confirm(`แทนที่ข้อมูลที่เปิดอยู่ด้วยตัวอย่าง${DOCS[docMode]}?`))) {
+        replaceState(docMode === 'proposal' ? sampleProposal() : sampleState(), `โหลดตัวอย่าง${DOCS[docMode]}แล้ว`);
+      }
     });
     $('#btnNew').addEventListener('click', () => {
       if (confirmDiscard('เริ่มโครงการใหม่') && (state._dirty || confirm('เริ่มโครงการใหม่? (โครงการที่บันทึกไว้ยังอยู่ในรายการ "โครงการที่บันทึกไว้")'))) {
         const keep = sampleState(); const b = blankState();
         // keep the school details so a new project only needs project-specific data
-        ['school', 'schoolFull', 'office', 'obec', 'ministry', 'director', 'directorPosition', 'coverImage']
+        ['school', 'schoolFull', 'office', 'officeShort', 'obec', 'ministry', 'director', 'directorPosition',
+          'deputy', 'deputyPosition', 'policyFocus', 'coverImage']
           .forEach(k => { b[k] = state[k] || keep[k]; });
-        replaceState(b, 'เริ่มโครงการใหม่แล้ว');
+        replaceState(b, 'เริ่มโครงการใหม่แล้ว — เริ่มจากแบบเสนอโครงการ');
+        setDoc('proposal');
       }
     });
     $('#fileImport').addEventListener('change', e => {
@@ -1078,7 +1319,7 @@
     $$('.mobile-switch button').forEach(b => b.addEventListener('click', () => {
       document.body.dataset.view = b.dataset.view;
       $$('.mobile-switch button').forEach(x => x.classList.toggle('active', x === b));
-      try { localStorage.setItem(UI_KEY, JSON.stringify({ view: b.dataset.view })); } catch (e) { /* ignore */ }
+      saveUi();
       if (b.dataset.view === 'preview') fitZoom();
     }));
 
