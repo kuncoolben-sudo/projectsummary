@@ -753,16 +753,44 @@
   }
 
   // ---------------------------------------------------------------- actions
-  function downloadJSON(data = projectData(state), prefix = 'project-summary-' + (String(data.year).replace(/[^0-9]/g, '') || 'data')) {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  function downloadBlob(blob, prefix, ext) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     // ASCII-only name: some browsers drop non-ASCII download names and fall back to "download"
     const d = new Date();
     const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
-    a.download = `${prefix}-${stamp}.json`;
+    a.download = `${prefix}-${stamp}.${ext}`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  const yearSlug = data => 'project-summary-' + (String(data.year).replace(/[^0-9]/g, '') || 'data');
+  function downloadJSON(data = projectData(state), prefix = yearSlug(data)) {
+    downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), prefix, 'json');
+  }
+
+  // ---------------------------------------------------------------- Word export
+  // The builder (js/docx-export.js) and its fonts/images (js/docx-assets.js, ~1.3 MB) load on first use.
+  const loaded = {};
+  function loadScript(src) {
+    return loaded[src] || (loaded[src] = new Promise((resolve, reject) => {
+      const el = document.createElement('script');
+      el.src = src; el.onload = resolve;
+      el.onerror = () => { delete loaded[src]; reject(new Error('load ' + src)); };
+      document.head.appendChild(el);
+    }));
+  }
+  function saveDocx() {
+    const btn = $('#btnDocx');
+    btn.disabled = true;
+    toast('กำลังสร้างไฟล์ Word…');
+    Promise.all([loadScript('js/docx-assets.js'), loadScript('js/docx-export.js')])
+      .then(() => window.ProjectDocx.build({ state, ratingSummary, qualityLevel, satLevel, fill, fmt, fmt2, money, or, LEVELS, getDims, printedWidth, PHOTO_BOX }))
+      .then(({ blob, skipped }) => {
+        downloadBlob(blob, yearSlug(state), 'docx');
+        toast(skipped ? `บันทึกไฟล์ Word แล้ว (ข้ามรูป ${skipped} รูปที่เบราว์เซอร์อ่านไฟล์ไม่ได้ — ลองเพิ่มรูปใหม่ผ่านปุ่ม "เพิ่มรูปภาพ")` : 'บันทึกไฟล์ Word แล้ว');
+      })
+      .catch(err => { console.error(err); toast('สร้างไฟล์ Word ไม่สำเร็จ'); })
+      .finally(() => { btn.disabled = false; });
   }
 
   // ---------------------------------------------------------------- saved projects (IndexedDB)
@@ -1008,6 +1036,7 @@
     $('#coverReset').addEventListener('click', () => { state.coverImage = ''; changed(); });
 
     $('#btnPdf').addEventListener('click', savePdf);
+    $('#btnDocx').addEventListener('click', saveDocx);
     $('#btnExport').addEventListener('click', () => downloadJSON());
     $('#btnSaveProject').addEventListener('click', saveProject);
     document.addEventListener('keydown', e => {

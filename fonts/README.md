@@ -8,6 +8,7 @@
 | `THSarabunNew-Bold.woff2` | 700 ตัวหนา |
 | `THSarabunNew-Italic.woff2` | 400 ตัวเอียง |
 | `THSarabunNew-BoldItalic.woff2` | 700 ตัวหนาเอียง |
+| `THSarabunNew-Regular.ttf`, `THSarabunNew-Bold.ttf` | ไฟล์ต้นฉบับ ฝังในไฟล์ Word (.docx) |
 
 - ฟอนต์: TH Sarabun New, Version 1.35 (2011)
 - ลิขสิทธิ์: Copyright (c) 2010-2011 by Software Industry Promotion Agency (Public Organization) (SIPA). Created by Suppakit Chalermlarp.
