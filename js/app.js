@@ -163,18 +163,22 @@
   }
 
   let saveTimer = null;
+  function writeWorkingCopy() {
+    saveTimer = null;
+    const el = document.getElementById('saveStatus');
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      el.textContent = 'บันทึกอัตโนมัติในเบราว์เซอร์แล้ว ' + new Date().toLocaleTimeString('th-TH');
+    } catch (e) {
+      el.textContent = 'บันทึกอัตโนมัติไม่สำเร็จ (ข้อมูล/รูปภาพมีขนาดใหญ่) — กด "บันทึกโครงการ" หรือ "ส่งออกข้อมูล" เพื่อเก็บไว้';
+    }
+  }
   function save() {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      const el = document.getElementById('saveStatus');
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        el.textContent = 'บันทึกอัตโนมัติในเบราว์เซอร์แล้ว ' + new Date().toLocaleTimeString('th-TH');
-      } catch (e) {
-        el.textContent = 'บันทึกอัตโนมัติไม่สำเร็จ (ข้อมูล/รูปภาพมีขนาดใหญ่) — กรุณาใช้ "ส่งออกข้อมูล" เพื่อเก็บไฟล์';
-      }
-    }, 400);
+    saveTimer = setTimeout(writeWorkingCopy, 400);
   }
+  // don't lose the last edits when the tab is closed/reloaded within the debounce window
+  window.addEventListener('pagehide', () => { if (saveTimer) { clearTimeout(saveTimer); writeWorkingCopy(); } });
 
   // ---------------------------------------------------------------- helpers
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -508,7 +512,7 @@
     changed();
   }
 
-  function changed() { render(); save(); }
+  function changed() { state._dirty = true; render(); save(); updateProjectStatus(); }
 
   function rowTools() {
     return `<div class="tools"><button type="button" data-act="up" title="เลื่อนขึ้น">▲</button><button type="button" data-act="down" title="เลื่อนลง">▼</button><button type="button" data-act="del" class="del" title="ลบ">✕</button></div>`;
@@ -657,16 +661,172 @@
   }
 
   // ---------------------------------------------------------------- actions
-  function downloadJSON() {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  function downloadJSON(data = projectData(state), prefix = 'project-summary-' + (String(data.year).replace(/[^0-9]/g, '') || 'data')) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     // ASCII-only name: some browsers drop non-ASCII download names and fall back to "download"
     const d = new Date();
     const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
-    a.download = `project-summary-${String(state.year).replace(/[^0-9]/g, '') || 'data'}-${stamp}.json`;
+    a.download = `${prefix}-${stamp}.json`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  // ---------------------------------------------------------------- saved projects (IndexedDB)
+  // IndexedDB rather than localStorage: a project with photos easily exceeds localStorage's ~5 MB.
+  const DB_NAME = 'project-summary', DB_STORE = 'projects';
+  let dbPromise = null;
+  function db() {
+    if (!dbPromise) {
+      dbPromise = new Promise((resolve, reject) => {
+        if (!window.indexedDB) return reject(new Error('no indexedDB'));
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE, { keyPath: 'id' });
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      dbPromise.catch(() => { dbPromise = null; });
+    }
+    return dbPromise;
+  }
+  function dbRun(mode, fn) {
+    return db().then(d => new Promise((resolve, reject) => {
+      const tx = d.transaction(DB_STORE, mode);
+      const req = fn(tx.objectStore(DB_STORE));
+      tx.oncomplete = () => resolve(req && req.result);
+      tx.onerror = tx.onabort = () => reject(tx.error);
+    }));
+  }
+  const dbAll = () => dbRun('readonly', st => st.getAll());
+  const dbGet = id => dbRun('readonly', st => st.get(id));
+  const dbPut = rec => dbRun('readwrite', st => st.put(rec));
+  const dbDelete = id => dbRun('readwrite', st => st.delete(id));
+
+  const newId = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  // The project data without the editor's bookkeeping fields.
+  function projectData(src) {
+    const { _id, _dirty, _savedAt, ...data } = src;
+    return data;
+  }
+  function makeRecord(id, data) {
+    return {
+      id, data, updatedAt: Date.now(),
+      name: (data.project || '').trim() || 'โครงการไม่มีชื่อ',
+      year: data.year || '', owner: data.owner || ''
+    };
+  }
+
+  function saveProject() {
+    const id = state._id || newId();
+    const rec = makeRecord(id, projectData(state));
+    return dbPut(rec).then(() => {
+      state._id = id; state._dirty = false; state._savedAt = rec.updatedAt;
+      save(); updateProjectStatus();
+      toast(`บันทึกโครงการ "${rec.name}" แล้ว`);
+      if ($('#projectsDialog').open) renderProjectList();
+    }).catch(() => toast('บันทึกโครงการไม่สำเร็จ — เบราว์เซอร์นี้ไม่อนุญาตให้เก็บข้อมูล กรุณาใช้ "ส่งออกข้อมูล"'));
+  }
+
+  function confirmDiscard(what) {
+    return !state._dirty || confirm(`โครงการที่เปิดอยู่มีการแก้ไขที่ยังไม่ได้บันทึก\nต้องการ${what}โดยไม่บันทึกหรือไม่?\n(กด "ยกเลิก" แล้วกด "บันทึกโครงการ" ก่อน หากต้องการเก็บไว้)`);
+  }
+
+  function openProject(id) {
+    if (id === state._id && !state._dirty) { $('#projectsDialog').close(); return; }
+    if (!confirmDiscard('เปิดโครงการอื่น')) return;
+    dbGet(id).then(rec => {
+      if (!rec) return toast('ไม่พบโครงการนี้');
+      replaceState(Object.assign({}, rec.data, { _id: rec.id, _dirty: false, _savedAt: rec.updatedAt }), `เปิดโครงการ "${rec.name}" แล้ว`);
+      $('#projectsDialog').close();
+    });
+  }
+
+  function duplicateProject(id) {
+    dbGet(id).then(rec => {
+      if (!rec) return;
+      const data = JSON.parse(JSON.stringify(rec.data));
+      data.project = (data.project || 'โครงการไม่มีชื่อ') + ' (สำเนา)';
+      return dbPut(makeRecord(newId(), data)).then(() => { toast('ทำสำเนาโครงการแล้ว'); renderProjectList(); });
+    });
+  }
+
+  function deleteProject(id) {
+    dbGet(id).then(rec => {
+      if (!rec || !confirm(`ลบโครงการ "${rec.name}" ออกจากรายการ?\nการลบไม่สามารถย้อนกลับได้`)) return;
+      return dbDelete(id).then(() => {
+        if (state._id === id) { delete state._id; state._dirty = true; save(); updateProjectStatus(); }
+        toast('ลบโครงการแล้ว'); renderProjectList();
+      });
+    });
+  }
+
+  function fmtDate(t) {
+    return new Date(t).toLocaleString('th-TH', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function renderProjectList() {
+    const box = $('#projectList');
+    dbAll().then(list => {
+      const q = $('#projectSearch').value.trim().toLowerCase();
+      list.sort((a, b) => b.updatedAt - a.updatedAt);
+      const shown = list.filter(r => !q || `${r.name} ${r.owner} ${r.year}`.toLowerCase().includes(q));
+      if (!shown.length) {
+        box.innerHTML = `<p class="pd-empty">${list.length ? 'ไม่พบโครงการที่ค้นหา' : 'ยังไม่มีโครงการที่บันทึกไว้<br>กรอกข้อมูลแล้วกด "บันทึกโครงการ" ที่แถบด้านบน'}</p>`;
+        return;
+      }
+      box.innerHTML = shown.map(r => `
+        <div class="pd-item${r.id === state._id ? ' current' : ''}" data-id="${esc(r.id)}">
+          <div class="info">
+            <div class="name">${esc(r.name)}${r.id === state._id ? '<span class="badge">กำลังเปิด</span>' : ''}</div>
+            <div class="meta">ปีงบประมาณ ${esc(r.year || '-')} · ${esc(r.owner || '-')} · บันทึกล่าสุด ${fmtDate(r.updatedAt)}</div>
+          </div>
+          <div class="acts">
+            <button type="button" class="btn small" data-act="open">เปิด/แก้ไข</button>
+            <button type="button" class="btn small" data-act="copy">ทำสำเนา</button>
+            <button type="button" class="btn small" data-act="export">ส่งออก</button>
+            <button type="button" class="btn small danger" data-act="delete">ลบ</button>
+          </div>
+        </div>`).join('');
+    }).catch(() => { box.innerHTML = '<p class="pd-empty">เบราว์เซอร์นี้ไม่อนุญาตให้เก็บข้อมูลโครงการ (เช่น โหมดไม่ระบุตัวตน)</p>'; });
+  }
+
+  function updateProjectStatus() {
+    const name = (state.project || '').trim() || 'โครงการไม่มีชื่อ';
+    const status = !state._id ? 'ยังไม่ได้บันทึก' : state._dirty ? 'มีการแก้ไขที่ยังไม่บันทึก' : 'บันทึกแล้ว';
+    $('#currentProject').textContent = `${name} — ${status}`;
+    $('#btnSaveProject').classList.toggle('dirty', !state._id || !!state._dirty);
+  }
+
+  function backupAll() {
+    dbAll().then(list => {
+      if (!list.length) return toast('ยังไม่มีโครงการที่บันทึกไว้');
+      downloadJSON({ type: 'project-summary-backup', version: 1, exportedAt: new Date().toISOString(), projects: list }, 'project-summary-backup');
+    });
+  }
+
+  // Accepts either a backup of all projects or a single exported project.
+  function importFile(file, { openSingle }) {
+    const r = new FileReader();
+    r.onload = () => {
+      let data;
+      try { data = JSON.parse(r.result); } catch (e) { return toast('ไฟล์ไม่ถูกต้อง'); }
+      if (data && data.type === 'project-summary-backup' && Array.isArray(data.projects)) {
+        const recs = data.projects.filter(p => p && p.id && p.data);
+        Promise.all(recs.map(rec => dbPut(rec)))
+          .then(() => { toast(`นำเข้า ${recs.length} โครงการแล้ว`); if ($('#projectsDialog').open) renderProjectList(); })
+          .catch(() => toast('นำเข้าไม่สำเร็จ'));
+      } else if (data && typeof data === 'object') {
+        const proj = projectData(data);
+        if (openSingle) {
+          if (!confirmDiscard('นำเข้าไฟล์')) return;
+          replaceState(Object.assign(proj, { _dirty: true }), 'นำเข้าข้อมูลแล้ว — กด "บันทึกโครงการ" เพื่อเก็บไว้ในรายการ');
+        } else {
+          dbPut(makeRecord(newId(), normalize(proj))).then(() => { toast('นำเข้าโครงการแล้ว'); renderProjectList(); });
+        }
+      } else toast('ไฟล์ไม่ถูกต้อง');
+    };
+    r.readAsText(file);
   }
 
   // The preview can be hidden (mobile form view), in which case the embedded font has not been
@@ -693,7 +853,7 @@
 
   function replaceState(next, msg) {
     state = normalize(next);
-    renderForm(); render(); save();
+    renderForm(); render(); save(); updateProjectStatus();
     if (msg) toast(msg);
   }
 
@@ -704,6 +864,7 @@
 
     renderForm();
     render();
+    updateProjectStatus();
 
     const editor = $('#editor');
     editor.addEventListener('input', e => {
@@ -750,12 +911,33 @@
     $('#logoReset').addEventListener('click', () => { state.logoImage = ''; changed(); });
 
     $('#btnPdf').addEventListener('click', savePdf);
-    $('#btnExport').addEventListener('click', downloadJSON);
+    $('#btnExport').addEventListener('click', () => downloadJSON());
+    $('#btnSaveProject').addEventListener('click', saveProject);
+    document.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveProject(); }
+    });
+    $('#btnProjects').addEventListener('click', () => {
+      $('#projectSearch').value = '';
+      renderProjectList();
+      $('#projectsDialog').showModal();
+    });
+    $('#projectsDialog').addEventListener('click', e => {
+      if (e.target === e.currentTarget || e.target.closest('[data-close]')) return $('#projectsDialog').close();
+      const btn = e.target.closest('[data-act]'); if (!btn) return;
+      const id = btn.closest('.pd-item').dataset.id;
+      ({ open: openProject, copy: duplicateProject, delete: deleteProject,
+         export: i => dbGet(i).then(rec => rec && downloadJSON(rec.data)) })[btn.dataset.act](id);
+    });
+    $('#projectSearch').addEventListener('input', renderProjectList);
+    $('#btnBackup').addEventListener('click', backupAll);
+    $('#backupImport').addEventListener('change', e => {
+      const f = e.target.files[0]; if (f) importFile(f, { openSingle: false }); e.target.value = '';
+    });
     $('#btnSample').addEventListener('click', () => {
-      if (confirm('แทนที่ข้อมูลปัจจุบันด้วยข้อมูลตัวอย่าง?')) replaceState(sampleState(), 'โหลดข้อมูลตัวอย่างแล้ว');
+      if (confirmDiscard('โหลดข้อมูลตัวอย่าง') && (state._dirty || confirm('แทนที่ข้อมูลที่เปิดอยู่ด้วยข้อมูลตัวอย่าง?'))) replaceState(sampleState(), 'โหลดข้อมูลตัวอย่างแล้ว');
     });
     $('#btnNew').addEventListener('click', () => {
-      if (confirm('เริ่มโครงการใหม่? ข้อมูลปัจจุบันจะถูกล้าง (แนะนำให้ "ส่งออกข้อมูล" เก็บไว้ก่อน)')) {
+      if (confirmDiscard('เริ่มโครงการใหม่') && (state._dirty || confirm('เริ่มโครงการใหม่? (โครงการที่บันทึกไว้ยังอยู่ในรายการ "โครงการที่บันทึกไว้")'))) {
         const keep = sampleState(); const b = blankState();
         // keep the school details so a new project only needs project-specific data
         ['school', 'schoolFull', 'office', 'obec', 'ministry', 'director', 'directorPosition', 'coverImage', 'logoImage']
@@ -764,13 +946,7 @@
       }
     });
     $('#fileImport').addEventListener('change', e => {
-      const f = e.target.files[0]; if (!f) return;
-      const r = new FileReader();
-      r.onload = () => {
-        try { replaceState(JSON.parse(r.result), 'นำเข้าข้อมูลเรียบร้อย'); }
-        catch (err) { toast('ไฟล์ไม่ถูกต้อง'); }
-      };
-      r.readAsText(f); e.target.value = '';
+      const f = e.target.files[0]; if (f) importFile(f, { openSingle: true }); e.target.value = '';
     });
 
     $$('.mobile-switch button').forEach(b => b.addEventListener('click', () => {
